@@ -1,0 +1,15 @@
+[project]
+name = "scrumcli"
+version = "0.0.1"
+dependencies = [
+    'importlib-metadata; python_version<"3.10"',
+]
+
+[project.scripts]
+hello="scrumcli.hello:hello"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
