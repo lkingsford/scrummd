@@ -3,7 +3,7 @@ import re
 from enum import Enum
 from typing import Optional
 
-from scrumcli.exceptions import ValidationError
+from scrummd.exceptions import ValidationError
 
 
 def get_block_name(md_line: str) -> str:

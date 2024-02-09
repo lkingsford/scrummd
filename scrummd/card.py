@@ -1,8 +1,8 @@
 from typing import Optional, TypedDict
-from scrumcli.exceptions import ValidationError
+from scrummd.exceptions import ValidationError
 
-from scrumcli.config import ScrumConfig
-from scrumcli.md import extract_fields
+from scrummd.config import ScrumConfig
+from scrummd.md import extract_fields
 
 
 class Card(TypedDict):

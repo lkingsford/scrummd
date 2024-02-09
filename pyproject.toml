@@ -1,5 +1,5 @@
 [project]
-name = "scrumcli"
+name = "scrummd"
 authors=[
     {name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com"},
 ]
@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-"sbl"="scrumcli:sbl_entry"
+"sbl"="scrummd:sbl_entry"
 
 [build-system]
 requires = ["setuptools", "mypy", "pytest"]

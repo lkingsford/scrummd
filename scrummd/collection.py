@@ -1,8 +1,8 @@
 import os
 import pathlib
-import scrumcli.card
+import scrummd.card
 import logging
-from scrumcli.config import ScrumConfig
+from scrummd.config import ScrumConfig
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class DuplicateIndexError(ValueError):
 
 def get_collection(
     config: ScrumConfig, collection_name: str
-) -> dict[str, scrumcli.card.Card]:
-    collection: dict[str, scrumcli.card.Card] = {}
+) -> dict[str, scrummd.card.Card]:
+    collection: dict[str, scrummd.card.Card] = {}
     collection_path = pathlib.Path(config.scrum_path, *(collection_name.split(".")))
     for root, dirs, files in os.walk(collection_path, followlinks=True):
         for name in files:
@@ -30,13 +30,13 @@ def get_collection(
             try:
                 with open(path, "r") as fo:
                     contents = fo.read()
-                    card = scrumcli.card.fromStr(config, contents)
+                    card = scrummd.card.fromStr(config, contents)
                     index = card["index"] or path.name.split(".")[0]
                     if index in collection:
                         raise DuplicateIndexError(index, path)
                     collection[index] = card
 
-            except scrumcli.card.ValidationError as ex:
+            except scrummd.card.ValidationError as ex:
                 if config.strict:
                     raise
                 else:

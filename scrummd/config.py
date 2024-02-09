@@ -1,6 +1,6 @@
 """The ScrumConfig class to configure processing scrum files."""
 
-from scrumcli import const
+from scrummd import const
 
 
 class ScrumConfig:

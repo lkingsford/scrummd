@@ -1,6 +1,6 @@
 import os
 import pytest
-import scrumcli.md as md
+import scrummd.md as md
 
 
 @pytest.fixture(scope="function")

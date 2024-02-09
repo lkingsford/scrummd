@@ -2,8 +2,8 @@
 
 import argparse
 
-from scrumcli.collection import get_collection
-from scrumcli.config import ScrumConfig
+from scrummd.collection import get_collection
+from scrummd.config import ScrumConfig
 
 config = ScrumConfig()
 

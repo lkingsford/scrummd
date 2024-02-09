@@ -1,4 +1,4 @@
-"""Initialises a scrumcli workspace in the current directory with recommended folders and configuration.
+"""Initialises a scrummd workspace in the current directory with recommended folders and configuration.
 """
 
 import argparse
