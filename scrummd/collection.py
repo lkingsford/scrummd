@@ -1,5 +1,6 @@
 import os
 import pathlib
+from typing import Optional
 import scrummd.card
 import logging
 from scrummd.config import ScrumConfig
@@ -17,11 +18,14 @@ class DuplicateIndexError(ValueError):
 
 
 def get_collection(
-    config: ScrumConfig, collection_name: str
+    config: ScrumConfig, collection_name: Optional[str] = None
 ) -> dict[str, scrummd.card.Card]:
     collection: dict[str, scrummd.card.Card] = {}
-    collection_path = pathlib.Path(config.scrum_path, *(collection_name.split(".")))
-    for root, dirs, files in os.walk(collection_path, followlinks=True):
+    if collection_name is not None:
+        collection_path = pathlib.Path(config.scrum_path, *(collection_name.split(".")))
+    else:
+        collection_path = pathlib.Path(config.scrum_path)
+    for root, _, files in os.walk(collection_path, followlinks=True):
         for name in files:
             path = pathlib.Path(root, name)
             if name[0] == ".":

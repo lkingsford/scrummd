@@ -10,6 +10,7 @@ dependencies = [
 
 [project.scripts]
 "sbl"="scrummd:sbl_entry"
+"scard"="scrummd:scard_entry"
 
 [build-system]
 requires = ["setuptools", "mypy", "pytest", "pylint"]

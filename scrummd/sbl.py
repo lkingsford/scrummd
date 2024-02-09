@@ -3,13 +3,12 @@
 import argparse
 
 from scrummd.collection import get_collection
-from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 
 
 def entry():
     parser = argparse.ArgumentParser()
-    parser.add_argument("collection")
+    parser.add_argument("collection", nargs="?")
     parser.description = __doc__
     args = parser.parse_args()
 
