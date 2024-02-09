@@ -1,24 +1,10 @@
 """Display a collection of scrum cards"""
 
-import os
 import argparse
-import tomllib
-from scrummd import const
 
 from scrummd.collection import get_collection
 from scrummd.config import ScrumConfig
-
-
-def load_fs_config() -> ScrumConfig:
-    for filename in const.CONFIG_FILE_NAME:
-        if os.path.exists(filename):
-            config_file = open(filename, "rb")
-            config_settings = tomllib.load(config_file)
-            relevant_settings = config_settings.get("tool", {}).get("scrummd")
-            if relevant_settings:
-                return ScrumConfig(**relevant_settings)
-
-    return ScrumConfig()
+from scrummd.config_loader import load_fs_config
 
 
 def entry():
