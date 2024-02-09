@@ -1,6 +1,5 @@
 import os
 import pathlib
-import re
 import scrumcli.card
 import logging
 from scrumcli.config import ScrumConfig
@@ -41,12 +40,12 @@ def get_collection(
                 if config.strict:
                     raise
                 else:
-                    logging.warn("ValidationError (%s) reading %s", [ex, path])
+                    logging.warn("ValidationError (%s) reading %s", ex, path)
 
             except DuplicateIndexError as ex:
                 if config.strict:
                     raise
                 else:
-                    logging.warn("%s ignored", [path])
+                    logging.warn("%s ignored", path)
 
     return collection

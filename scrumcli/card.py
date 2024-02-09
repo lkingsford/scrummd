@@ -1,13 +1,8 @@
-from io import StringIO
 from typing import Optional, TypedDict
+from scrumcli.exceptions import ValidationError
 
 from scrumcli.config import ScrumConfig
-
-
-class ValidationError(ValueError):
-    """Triggered if there's a failure validating a card that's being built"""
-
-    pass
+from scrumcli.md import extract_fields
 
 
 class Card(TypedDict):
@@ -18,4 +13,10 @@ class Card(TypedDict):
 
 
 def fromStr(config: ScrumConfig, inputCard: str):
-    return Card(index=None, summary="")
+    fields: dict[str, Optional[str]] = extract_fields(inputCard)
+    if "index" not in fields:
+        fields["index"] = None
+    if "summary" not in fields:
+        raise ValidationError('"summary" expected but not present')
+
+    return Card(**fields)  # type: ignore
