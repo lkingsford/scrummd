@@ -1,4 +1,4 @@
-"""Display a scrum card"""
+"""Display any number of scrum cards"""
 
 import argparse
 import logging

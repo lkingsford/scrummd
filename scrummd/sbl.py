@@ -8,7 +8,11 @@ from scrummd.config_loader import load_fs_config
 
 def entry():
     parser = argparse.ArgumentParser()
-    parser.add_argument("collection", nargs="?")
+    parser.add_argument(
+        "collection",
+        nargs="?",
+        help="The collection to return. If none is given, all cards are returned.",
+    )
     parser.description = __doc__
     args = parser.parse_args()
 
