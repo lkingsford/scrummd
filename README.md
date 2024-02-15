@@ -65,6 +65,17 @@ options:
   -h, --help  show this help message and exit
 ```
 
+### Fields
+
+The following special fields are available:
+
+| Field       | Required | Description                                 |
+| ----------- | -------- | ------------------------------------------- |
+| summary     | Y        | A title of the card shown in most outputs   |
+| index       | N        | Replace the filename with a new card number |
+| tags        | N        | Additional collections to put the card in   |
+| collections | N        | Synonym for `tags`                          |
+
 ### Configuaration
 
 Configuration can be stored in the priority order of:
