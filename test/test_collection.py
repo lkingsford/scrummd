@@ -45,3 +45,13 @@ def test_get_collection_with_tags(data_config):
     test_collection = get_collection(data_config, "special")
     indices = test_collection.keys()
     assert sorted(indices) == ["c4", "c5", "c6"]
+
+
+def test_ignore_dot_folders(data_config):
+    """Test that any paths or cards under folders starting with . are completely ignored"""
+    test_collection = get_collection(data_config, "collection2")
+    indices = test_collection.keys()
+    # If i1 is in, then folders aren't ignored
+    assert "i1" not in indices
+    # If i2 is in, then not dot folders aren't dot folders aren't ignored
+    assert "i2" not in indices

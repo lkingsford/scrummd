@@ -37,9 +37,11 @@ def get_collection(
     collection_path = pathlib.Path(config.scrum_path)
     for root, _, files in os.walk(collection_path, followlinks=True):
         # So - this'll turn "scrum/backlog/special" into "backlog.special"
-        collection_from_path = ".".join(
-            pathlib.Path(root).relative_to(collection_path).parts
-        )
+        path_parts = pathlib.Path(root).relative_to(collection_path).parts
+        collection_from_path = ".".join(path_parts)
+        # Ignore any folder starting with .
+        if any([folder_name[0] == "." for folder_name in path_parts]):
+            continue
 
         for name in files:
             path = pathlib.Path(root, name)
@@ -67,6 +69,7 @@ def get_collection(
 
             except scrummd.card.ValidationError as ex:
                 if config.strict:
+                    logging.error("ValidationError (%s) reading %s", ex, path)
                     raise
                 else:
                     logging.warn("ValidationError (%s) reading %s", ex, path)
