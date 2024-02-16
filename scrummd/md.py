@@ -69,6 +69,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
         IN_HEADER_BLOCK = 2
         IN_PROPERTY_LIST = 3
         IN_HEADER_LIST = 4
+        IN_CODE_BLOCK = 5
 
     block_name: Optional[str] = None
     block_status = BlockStatus.NO_BLOCK
@@ -124,6 +125,12 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 list_field_key = ""
                 block_status = BlockStatus.IN_HEADER_BLOCK
 
+        if block_status == BlockStatus.IN_CODE_BLOCK:
+            if "```" in stripped_line:
+                block_status = BlockStatus.IN_HEADER_BLOCK
+            block_value += line + "\n"
+            continue
+
         if block_status == BlockStatus.IN_HEADER_BLOCK:
             if stripped_line == "---":
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
@@ -143,6 +150,9 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 if block_name is not None:
                     list_field_key = block_name
                 fields[list_field_key] = [split_list_item(stripped_line)]
+            elif "```" in stripped_line:
+                block_status = BlockStatus.IN_CODE_BLOCK
+                block_value += line + "\n"
             else:
                 block_value += line + "\n"
 

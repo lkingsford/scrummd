@@ -13,6 +13,13 @@ def md1_fo() -> str:
 
 
 @pytest.fixture(scope="function")
+def md2_fo() -> str:
+    fo = open("test/data/md2.md")
+    yield fo
+    fo.close()
+
+
+@pytest.fixture(scope="function")
 def c4_md() -> str:
     fo = open("test/data/collection2/c4.md")
     yield fo
@@ -81,3 +88,14 @@ def test_extract_header_list(c5_md):
     """Tests that the list from a header is correctly extracted"""
     results = md.extract_fields(c5_md.read())
     assert sorted(results["tags"]) == ["special", "special2", "special3"]
+
+
+def test_ignore_code_block(md2_fo):
+    """Test that fields inside a ``` block are ignored, and just form part of the value"""
+    results = md.extract_fields(md2_fo.read())
+    # This would be 'Test Card 4' if it read inside the code block
+    assert results["summary"] == "Test Card With Code"
+    # This wouldn't be there if the block wasn't there as a string
+    assert "Test Card 4" in results["description"]
+    # This wouldn't be there if it stopped adding after the block
+    assert "something else" in results["description"]
