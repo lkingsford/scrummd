@@ -29,10 +29,14 @@ def entry():
         for k, v in card.items():
             if k == "summary":
                 continue
+            if k[0] == "_":
+                continue
             if v is None:
                 continue
 
-            if v.find("\n") > 0:
+            if isinstance(v, list):
+                print(f"- {v}")
+            elif v.find("\n") > 0:
                 print(f"# {k}")
                 print(v)
                 print()
