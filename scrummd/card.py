@@ -5,10 +5,14 @@ from scrummd.config import ScrumConfig
 from scrummd.md import extract_fields
 
 
+Index = str
+"""Index of a card"""
+
+
 class Card(TypedDict):
     """A Scrum 'Card' - might be a chunk of work, might be an epic, might be a ticket."""
 
-    index: Optional[str]
+    index: Index
     summary: str
     _collections: list[str]
 

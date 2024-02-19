@@ -1,9 +1,28 @@
 import re
 
 from enum import Enum
-from typing import Optional, Any
+from typing import NamedTuple, Optional, Any, Union
 
+from scrummd.card import Index
 from scrummd.exceptions import ValidationError
+
+
+class FieldType(Enum):
+    # Types that a field may be
+    STRING = 1
+    STRING_LIST = 2
+    CARD_LIST = 3
+
+
+class FieldValue(NamedTuple):
+    """Generic field value"""
+
+    field_type: FieldType
+    """Type of the field"""
+    # Should we just be 'isinstance'ing these? Doesn't smell great though
+
+    value: Union[str, list[str], list[Index]]
+    """Value from the file"""
 
 
 def get_block_name(md_line: str) -> str:
@@ -39,6 +58,26 @@ def split_list_item(md_line: str) -> str:
         return ""
 
 
+def is_card(value: str) -> (bool, str):
+    """Return whether a value has been identified as a card, and its value.
+
+    Args:
+        value (str): Field value to attempt to identify
+
+    Returns:
+        (bool, str): Whether it's a card, and its value if it is
+    """
+    # This is probably a temporary solution - something will be needed for identifying
+    # cards in-text - which may be suitable here too.
+    stripped = value.strip()
+    return (
+        stripped[0] == "["
+        and stripped[1] == "["
+        and stripped[-1] == "]"
+        and stripped[-2] == "]"
+    )
+
+
 def extract_fields(md_file: str) -> dict[str, Any]:
     """Extract all fields from the md_file
 
@@ -52,9 +91,10 @@ def extract_fields(md_file: str) -> dict[str, Any]:
       `# key
       Value
 
-    There are two types of value:
+    There are three types of value:
     - Strings
     - Lists
+    - Lists of Cards
 
     Lists are defined as items in a list of items starting with '-' and ending with a newline following the header or property.
 
@@ -75,6 +115,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
     block_status = BlockStatus.NO_BLOCK
     block_value = ""
     list_field_key = ""
+    list_progress = []
 
     for line in md_file.splitlines():
         stripped_line = line.strip()
@@ -95,7 +136,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
         if block_status == BlockStatus.IN_PROPERTY_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
                 value = split_list_item(stripped_line)
-                fields[list_field_key].append(value)
+                list_progress.append(value)
                 continue
             else:
                 list_field_key = ""
@@ -111,9 +152,12 @@ def extract_fields(md_file: str) -> dict[str, Any]:
             if value == "":
                 block_status = BlockStatus.IN_PROPERTY_LIST
                 list_field_key = key
-                fields[list_field_key] = []
+                list_progress = []
             else:
-                fields[key] = value
+                is_card, card_value = is_card(value)
+                if is_card:
+                    fields[key] == 
+                fields[key] = field_from_line(value)
             continue
 
         if block_status == BlockStatus.IN_HEADER_LIST:
@@ -149,7 +193,9 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 block_status = BlockStatus.IN_HEADER_LIST
                 if block_name is not None:
                     list_field_key = block_name
-                fields[list_field_key] = [split_list_item(stripped_line)]
+                fields[list_field_key] = FieldValue(
+                    FieldType.STRING_LIST, [split_list_item(stripped_line)]
+                )
             elif "```" in stripped_line:
                 block_status = BlockStatus.IN_CODE_BLOCK
                 block_value += line + "\n"
