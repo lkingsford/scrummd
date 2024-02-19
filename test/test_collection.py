@@ -55,3 +55,19 @@ def test_ignore_dot_folders(data_config):
     assert "i1" not in indices
     # If i2 is in, then not dot folders aren't dot folders aren't ignored
     assert "i2" not in indices
+
+
+@pytest.mark.parametrize(
+    ["collection_name", "expected_items"],
+    [
+        ["collection3", set(["c1", "c2", "c4", "c5"])],
+        ["collection3.key", set(["c5"])],
+        ["collection3.special", set(["c1", "c5"])],
+    ],
+    ids=["Add to root (Items)", "Single item in param", "Subcollection"],
+)
+def test_reference_collection(data_config, collection_name, expected_items):
+    """Test that items"""
+    test_collection = get_collection(data_config, collection_name)
+    indices = test_collection.keys()
+    assert set(indices) == expected_items
