@@ -99,3 +99,17 @@ def test_ignore_code_block(md2_fo):
     assert "Test Card 4" in results["description"]
     # This wouldn't be there if it stopped adding after the block
     assert "something else" in results["description"]
+
+
+@pytest.mark.parametrize(
+    ["input", "expected"],
+    [
+        ["abc", []],
+        ["[[card1]] [[card2]]", ["card1", "card2"]],
+        ["123 [[card1]] [[card2]]", ["card1", "card2"]],
+        [["[[card1]]", "[[card2]][[card3]]"], ["card1", "card2", "card3"]],
+    ],
+)
+def test_extract_collection(input, expected):
+    results = md.extract_collection(input)
+    assert results == expected
