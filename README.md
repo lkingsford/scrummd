@@ -10,7 +10,7 @@ This is published under the [GNU General Public License v3.0](LICENSE.md). I am 
 
 ## Usage
 
-### Basic collection
+### Collection
 
 A basic collection is a folder on the file system, grouped and containing cards.
 
@@ -75,8 +75,41 @@ The following special fields are available:
 | index       | N        | Replace the filename with a new card number |
 | tags        | N        | Additional collections to put the card in   |
 | collections | N        | Synonym for `tags`                          |
+| items       | N        | Items if card index is used as a collection |
 
-### Configuaration
+### Advanced Collections
+
+A card can also be added in collections by adding them to a `collections` or `tags` field.
+
+In addition, any cards which contain card indexes in fields in the format of `[[index]]` will create a collection. If they're in a field called `items`, any cards listed will be in a collection with the same name as the index of the card. If they're in an other field, they'll create a collection in the format `index.fieldname`. So - for example:
+
+```md
+---
+Summary: Test collection in field of card
+Index: epic1
+Key: [[c5]]
+---
+
+# Description
+
+Additional text
+
+# Items
+
+-   [[c1]]
+-   [[c2]]
+
+# Special
+
+-   [[c1]]
+-   [[c4]]
+```
+
+will create a collection called `epic1` containing `c1`, `c2`, `c3`, `c4` and `c5` (as collections are included in their parent). It will also create a collection called `epic1.special` containing `c1` and `c4`, and a collection called `epic1.key` containing `c5`.
+
+This can be used to create groups of cards for things like sprints, epics or tracing relationships (such as dependencies) between cards.
+
+### Configuration
 
 Configuration can be stored in the priority order of:
 
