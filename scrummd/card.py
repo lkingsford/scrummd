@@ -2,7 +2,7 @@ from typing import Any, Optional, TypedDict
 from scrummd.exceptions import ValidationError
 
 from scrummd.config import ScrumConfig
-from scrummd.md import extract_fields
+from scrummd.md import extract_collection, extract_fields
 
 
 class Card(TypedDict):
@@ -11,6 +11,7 @@ class Card(TypedDict):
     index: Optional[str]
     summary: str
     _collections: list[str]
+    _defined_collections: dict[str, list[str]]
 
 
 def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> Card:
@@ -51,5 +52,15 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
         raise ValidationError('"summary" expected but not present')
     if isinstance(fields["summary"], list):
         raise ValidationError('"summary" must not be a list')
+
+    fields["_defined_collections"] = {}
+    if "items" in fields:
+        fields["_defined_collections"][""] = extract_collection(fields["items"])
+
+    for key, value in fields.items():
+        if value is not None and (isinstance(value, str) or isinstance(value, list)):
+            collection = extract_collection(value)
+            if len(collection) > 0:
+                fields["_defined_collections"][key] = collection
 
     return Card(**fields)  # type: ignore

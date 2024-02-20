@@ -142,6 +142,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 continue
             else:
                 list_field_key = ""
+                block_name = None
                 block_status = BlockStatus.IN_HEADER_BLOCK
 
         if block_status == BlockStatus.IN_CODE_BLOCK:

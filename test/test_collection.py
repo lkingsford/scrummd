@@ -62,7 +62,7 @@ def test_ignore_dot_folders(data_config):
     [
         ["collection3", set(["c1", "c2", "c4", "c5"])],
         ["collection3.key", set(["c5"])],
-        ["collection3.special", set(["c1", "c5"])],
+        ["collection3.special", set(["c1", "c4"])],
     ],
     ids=["Add to root (Items)", "Single item in param", "Subcollection"],
 )

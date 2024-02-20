@@ -33,6 +33,7 @@ def get_collection(
         dict[str, scrummd.card.Card]: A dict with the index of the card, and a card object
     """
 
+    all_cards: dict[str, scrummd.card.Card] = {}
     collection: dict[str, scrummd.card.Card] = {}
     collection_path = pathlib.Path(config.scrum_path)
     for root, _, files in os.walk(collection_path, followlinks=True):
@@ -55,17 +56,9 @@ def get_collection(
                         config, contents, [collection_from_path]
                     )
                     index = card["index"] or path.name.split(".")[0]
-                    if index in collection:
+                    if index in all_cards:
                         raise DuplicateIndexError(index, path)
-                    if not collection_name:
-                        collection[index] = card
-                    else:
-                        for _collection in card["_collections"]:
-                            if (
-                                _collection == collection_name
-                                or _collection.startswith(collection_name + ".")
-                            ):
-                                collection[index] = card
+                    all_cards[index] = card
 
             except scrummd.card.ValidationError as ex:
                 if config.strict:
@@ -79,5 +72,26 @@ def get_collection(
                     raise
                 else:
                     logging.warn("%s ignored", path)
+
+    if not collection_name:
+        return all_cards
+
+    for index, card in all_cards.items():
+        for _collection in card["_collections"]:
+            if _collection == collection_name or _collection.startswith(
+                collection_name + "."
+            ):
+                collection[index] = card
+
+        for collection_subname, _collection in card["_defined_collections"].items():
+            current_collection_name = (
+                index if collection_subname == "" else f"{index}.{collection_subname}"
+            )
+            if (
+                current_collection_name == collection_name
+                or current_collection_name.startswith(collection_name + ".")
+            ):
+                for card_index in _collection:
+                    collection[card_index] = all_cards[card_index]
 
     return collection
