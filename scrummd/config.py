@@ -15,7 +15,17 @@ class ScrumConfig:
     columns: list[str] = ["index", "summary"]
     """List of columns to return in output"""
 
-    def __init__(self, scrum_path=scrum_path, strict=strict, columns=columns) -> None:
+    omit_headers: bool = False
+    """Omit headers from output"""
+
+    def __init__(
+        self,
+        scrum_path=scrum_path,
+        strict=strict,
+        columns=columns,
+        omit_headers=omit_headers,
+    ) -> None:
         self.scrum_path = scrum_path
         self.strict = strict
         self.columns = columns
+        self.omit_headers = omit_headers

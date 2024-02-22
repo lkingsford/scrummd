@@ -12,6 +12,7 @@ class Card(TypedDict):
     summary: str
     _collections: list[str]
     _defined_collections: dict[str, list[str]]
+    _path: str
 
 
 def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> Card:

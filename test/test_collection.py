@@ -78,3 +78,10 @@ def test_index_set(data_config):
     not set in the fields of the card itself"""
     test_collection = get_collection(data_config)
     assert test_collection["c1"]["index"] == "c1"
+
+
+def test_path_set(data_config):
+    """Test that the _path is set of cards to the relative path of the card"""
+    test_collection = get_collection(data_config)
+    assert test_collection["c1"]["_path"] == "test/data/collection1/c1.md"
+    assert test_collection["e1"]["_path"] == "test/data/collection1/embedded/e1.md"

@@ -42,7 +42,7 @@ A card's index (card number) is its file name. All cards **must** have a summary
 ### `sbl`
 
 ```
-usage: sbl [-h] [-c [COLUMNS]] [collection]
+usage: sbl [-h] [-c [COLUMNS]] [-b] [-o] [collection]
 
 Display a collection of scrum cards
 
@@ -53,6 +53,8 @@ options:
   -h, --help            show this help message and exit
   -c [COLUMNS], --columns [COLUMNS]
                         A comma separated list of columns to return.
+  -b, --bare            Return bare paths only suitable for scripting. Effectively shorthand for `sbl -o -c _path`.
+  -o, --omit-headers    Omit headers from output.
 ```
 
 ### `scard`
@@ -71,13 +73,16 @@ options:
 
 The following special fields are available:
 
-| Field       | Required | Description                                 |
-| ----------- | -------- | ------------------------------------------- |
-| summary     | Y        | A title of the card shown in most outputs   |
-| index       | N        | Replace the filename with a new card number |
-| tags        | N        | Additional collections to put the card in   |
-| collections | N        | Synonym for `tags`                          |
-| items       | N        | Items if card index is used as a collection |
+| Field         | Required | Description                                 |
+| ------------- | -------- | ------------------------------------------- |
+| `summary`     | Y        | A title of the card shown in most outputs   |
+| `index`       | N        | Replace the filename with a new card number |
+| `tags`        | N        | Additional collections to put the card in   |
+| `collections` | N        | Synonym for `tags`                          |
+| `items`       | N        | Items if card index is used as a collection |
+| `_path`       | RO       | The relative path of the card               |
+
+The fields marked RO are Read Only and are set by scummd. They can be used (for instance) as columns with `sbl`.
 
 ### Advanced Collections
 
@@ -122,8 +127,9 @@ Configuration can be stored in the priority order of:
 
 Initial settings that are supported are
 
-| Setting    | Description                                                           |
-| ---------- | --------------------------------------------------------------------- |
-| strict     | Fail on any issue with the collection rather than trying to persevere |
-| scrum_path | Path of the scrum cards/meta                                          |
-| columns    | Array of columns to show with `sbl`                                   |
+| Setting      | Description                                                           |
+| ------------ | --------------------------------------------------------------------- |
+| strict       | Fail on any issue with the collection rather than trying to persevere |
+| scrum_path   | Path of the scrum cards/meta                                          |
+| columns      | Array of columns to show with `sbl`                                   |
+| omit_headers | Hide headers from `sbl` output                                        |

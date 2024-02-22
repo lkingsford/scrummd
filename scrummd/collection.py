@@ -59,6 +59,7 @@ def get_collection(
                     if index in all_cards:
                         raise DuplicateIndexError(index, path)
                     card["index"] = index
+                    card["_path"] = str(path)
                     all_cards[index] = card
 
             except scrummd.card.ValidationError as ex:
