@@ -33,7 +33,7 @@ def c5_md() -> str:
     fo.close()
 
 
-def test_extract_property(md1_fo):
+def test_extract_property_from_full_file(md1_fo):
     """Test extracting property variables from an md file"""
     results = md.extract_fields(md1_fo.read())
     assert results["summary"] == "Summary of card"

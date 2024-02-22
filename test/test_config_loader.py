@@ -8,11 +8,13 @@ from pathlib import Path
 
 @pytest.fixture(scope="function")
 def temp_dir():
+    initial_dir = os.getcwd()
     with tempfile.TemporaryDirectory() as td:
         while not os.path.exists(td):
             pass
         os.chdir(td)
         yield td
+    os.chdir(initial_dir)
 
 
 @pytest.fixture(scope="function")
