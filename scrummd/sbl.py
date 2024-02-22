@@ -13,6 +13,12 @@ def entry():
         nargs="?",
         help="The collection to return. If none is given, all cards are returned.",
     )
+    parser.add_argument(
+        "-c",
+        "--columns",
+        nargs="?",
+        help="A comma separated list of columns to return.",
+    )
     parser.description = __doc__
     args = parser.parse_args()
 
@@ -20,9 +26,16 @@ def entry():
 
     collection = get_collection(config, args.collection)
 
-    print("index, summary")
-    for index, card in collection.items():
-        print(f"{index}, {card['summary']}")
+    if args.columns:
+        columns = [column.strip() for column in args.columns.split(",")]
+    else:
+        columns = config.columns
+
+    print(", ".join(columns))
+
+    for card in collection.values():
+        values = [card[col] if (col in card and card[col]) else "" for col in columns]
+        print(", ".join(values))
 
 
 if __name__ == "__main__":

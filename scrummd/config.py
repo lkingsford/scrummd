@@ -12,6 +12,10 @@ class ScrumConfig:
     strict: bool = False
     """Fail on any error with the scrum folder (such as duplicate index or invalid file)"""
 
-    def __init__(self, scrum_path=scrum_path, strict=strict) -> None:
+    columns: list[str] = ["index", "summary"]
+    """List of columns to return in output"""
+
+    def __init__(self, scrum_path=scrum_path, strict=strict, columns=columns) -> None:
         self.scrum_path = scrum_path
         self.strict = strict
+        self.columns = columns

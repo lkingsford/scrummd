@@ -42,15 +42,17 @@ A card's index (card number) is its file name. All cards **must** have a summary
 ### `sbl`
 
 ```
-usage: sbl [-h] [collection]
+usage: sbl [-h] [-c [COLUMNS]] [collection]
 
 Display a collection of scrum cards
 
 positional arguments:
-  collection  The collection to return. If none is given, all cards are returned.
+  collection            The collection to return. If none is given, all cards are returned.
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help            show this help message and exit
+  -c [COLUMNS], --columns [COLUMNS]
+                        A comma separated list of columns to return.
 ```
 
 ### `scard`
@@ -124,3 +126,4 @@ Initial settings that are supported are
 | ---------- | --------------------------------------------------------------------- |
 | strict     | Fail on any issue with the collection rather than trying to persevere |
 | scrum_path | Path of the scrum cards/meta                                          |
+| columns    | Array of columns to show with `sbl`                                   |

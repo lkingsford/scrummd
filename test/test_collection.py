@@ -71,3 +71,10 @@ def test_reference_collection(data_config, collection_name, expected_items):
     test_collection = get_collection(data_config, collection_name)
     indices = test_collection.keys()
     assert set(indices) == expected_items
+
+
+def test_index_set(data_config):
+    """Test that the index value of the card is set from filename where it's
+    not set in the fields of the card itself"""
+    test_collection = get_collection(data_config)
+    assert test_collection["c1"]["index"] == "c1"
