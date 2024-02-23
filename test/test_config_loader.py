@@ -17,12 +17,27 @@ def temp_dir():
     os.chdir(initial_dir)
 
 
+PYPROJECT_WITH_CONFIG = """[project]
+name = "scrummd"
+
+[tool.scrummd]
+strict = true
+scrum_path = "with_config"
+"""
+
+
 @pytest.fixture(scope="function")
 def pyproject_with_config(temp_dir):
     with open(Path(temp_dir, "pyproject.toml"), "w") as fo:
         fo.write(PYPROJECT_WITH_CONFIG)
         fo.flush()
         yield
+
+
+PYPROJECT_WITHOUT_CONFIG = """[project]
+name = "scrummd"
+scrum_path = "no_config"
+"""
 
 
 @pytest.fixture(scope="function")
@@ -33,32 +48,22 @@ def pyproject_without_config(temp_dir):
         yield
 
 
+BASIC_TOOL_ONLY = """
+[tool.scrummd]
+strict = true
+scrum_path = "basic_tool"
+
+[tool.scrummd.fields]
+status = ["Ready", "Progress", "Done"]
+"""
+
+
 @pytest.fixture(scope="function")
 def scrum_dot_toml(temp_dir):
     with open(Path(temp_dir, "scrum.toml"), "w") as fo:
         fo.write(BASIC_TOOL_ONLY)
         fo.flush()
         yield
-
-
-PYPROJECT_WITHOUT_CONFIG = """[project]
-name = "scrummd"
-scrum_path = "no_config"
-"""
-
-PYPROJECT_WITH_CONFIG = """[project]
-name = "scrummd"
-
-[tool.scrummd]
-strict = true
-scrum_path = "with_config"
-"""
-
-BASIC_TOOL_ONLY = """
-[tool.scrummd]
-strict = true
-scrum_path = "basic_tool"
-"""
 
 
 def test_no_file(temp_dir):
@@ -83,3 +88,9 @@ def test_with_config_pyproject(temp_dir, pyproject_with_config):
     """Test that the tool works when pyproject is laid out as normal"""
     config = load_fs_config()
     assert config.scrum_path == "with_config"
+
+
+def test_fields_table(temp_dir, scrum_dot_toml):
+    """Test that the fields values are set from tool.scrummd.field"""
+    config = load_fs_config()
+    assert config.fields["status"] == ["Ready", "Progress", "Done"]
