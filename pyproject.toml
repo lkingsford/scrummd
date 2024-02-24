@@ -1,16 +1,12 @@
 [project]
 name = "scrummd"
-authors=[
-    {name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com"},
-]
+authors = [{ name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com" }]
 version = "0.0.1"
-dependencies = [
-    'importlib-metadata; python_version<"3.11"', 'tomli-w'
-]
+dependencies = ['importlib-metadata; python_version<"3.11"', 'tomli-w']
 
 [project.scripts]
-"sbl"="scrummd:sbl_entry"
-"scard"="scrummd:scard_entry"
+"sbl" = "scrummd:sbl_entry"
+"scard" = "scrummd:scard_entry"
 
 [build-system]
 requires = ["setuptools", "mypy", "pytest", "pylint"]
@@ -19,5 +15,12 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 exclude = ["scrum", "test", "docs"]
 
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
 [tool.scrummd]
 strict = true
+columns = ["index", "status", "summary"]
+
+[tool.scrummd.fields]
+status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]

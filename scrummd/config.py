@@ -18,14 +18,19 @@ class ScrumConfig:
     omit_headers: bool = False
     """Omit headers from output"""
 
+    fields: dict[str, str] = {}
+    """Fields with limited permitted values and defined order"""
+
     def __init__(
         self,
         scrum_path=scrum_path,
         strict=strict,
         columns=columns,
         omit_headers=omit_headers,
+        fields=fields,
     ) -> None:
         self.scrum_path = scrum_path
         self.strict = strict
         self.columns = columns
         self.omit_headers = omit_headers
+        self.fields = fields
