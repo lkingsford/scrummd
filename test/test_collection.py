@@ -2,12 +2,12 @@ import os
 import pytest
 
 from scrummd.config import ScrumConfig
-from scrummd.collection import get_collection
+from scrummd.collection import get_collection, group_collection
 
 
 @pytest.fixture(scope="session")
 def data_config() -> ScrumConfig:
-    return ScrumConfig(scrum_path="test/data")
+    return ScrumConfig(scrum_path="test/data", fields={"Status": ["Ready", "Done"]})
 
 
 def test_get_basic_collection(data_config):
@@ -86,3 +86,28 @@ def test_path_set(data_config):
     test_collection = get_collection(data_config)
     assert test_collection["c1"]["_path"] == "test/data/collection1/c1.md"
     assert test_collection["e1"]["_path"] == "test/data/collection1/embedded/e1.md"
+
+
+def test_group_collection_defined_fields(data_config):
+    """Test that grouping when a field is defined by config returns correct groups"""
+    test_collection = get_collection(data_config, "collection1")
+    grouped = group_collection(data_config, test_collection, ["status"])
+    assert set((card["index"] for card in grouped["ready"])) == set(["c1", "c2", "e1"])
+    assert set((card["index"] for card in grouped["done"])) == set(["c3"])
+
+
+def test_group_collection_undefined_fields(data_config):
+    """Test that grouping when a field is defined by config returns correct groups"""
+    test_collection = get_collection(data_config, "collection1")
+    grouped = group_collection(data_config, test_collection, ["assignee"])
+    assert set((card["index"] for card in grouped["bob"])) == set(["c1", "c3"])
+    assert set((card["index"] for card in grouped["mary"])) == set(["c2"])
+
+
+def test_multiple_groupbys(data_config):
+    """Test that grouping when there are two fields is correct"""
+    test_collection = get_collection(data_config, "collection1")
+    grouped = group_collection(data_config, test_collection, ["status", "assignee"])
+    assert set((card["index"] for card in grouped["ready"]["bob"])) == set(["c1"])
+    assert set((card["index"] for card in grouped["ready"]["mary"])) == set(["c2"])
+    assert set((card["index"] for card in grouped["done"]["bob"])) == set(["c3"])

@@ -1,11 +1,15 @@
+from argparse import ArgumentError
 import os
 import pathlib
-from typing import Optional
+from typing import Optional, Union
 import scrummd.card
 import logging
 from scrummd.config import ScrumConfig
+from scrummd.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+
+Collection = dict[str, scrummd.card.Card]
 
 
 class DuplicateIndexError(ValueError):
@@ -19,7 +23,7 @@ class DuplicateIndexError(ValueError):
 
 def get_collection(
     config: ScrumConfig, collection_name: Optional[str] = None
-) -> dict[str, scrummd.card.Card]:
+) -> Collection:
     """Get a collection of cards
 
     Args:
@@ -85,7 +89,9 @@ def get_collection(
             ):
                 collection[index] = card
 
-        for collection_subname, _collection in card["_defined_collections"].items():
+        for collection_subname, _defined_collection in card[
+            "_defined_collections"
+        ].items():
             current_collection_name = (
                 index if collection_subname == "" else f"{index}.{collection_subname}"
             )
@@ -93,7 +99,74 @@ def get_collection(
                 current_collection_name == collection_name
                 or current_collection_name.startswith(collection_name + ".")
             ):
-                for card_index in _collection:
+                for card_index in _defined_collection:
                     collection[card_index] = all_cards[card_index]
 
     return collection
+
+
+Groups = dict[Optional[str], Union["Groups", list[scrummd.card.Card]]]
+
+
+def group_collection(
+    config: ScrumConfig, collection: Collection, groups: list[str]
+) -> Groups:
+    """Group collection into (potentially nested) groups by the field in the Card
+
+    Args:
+        config (ScrumConfig): Scrum config
+        collection (Collection): Collection of cards to group
+        groups (list[str]): All the groups that need to be made
+
+    Returns:
+        Groups: A dict with the group value, and either more groups or the field value
+    """
+
+    cur_group = groups[0].casefold()
+    predefined = cur_group in [k.casefold() for k in config.fields.keys()]
+    output: Groups = {}
+    fields: set[Optional[str]] = set()
+
+    if predefined:
+        group = next(
+            fields
+            for key, fields in config.fields.items()
+            if key.casefold() == cur_group
+        )
+        fields = set([f.casefold() for f in group])
+    else:
+        for card in collection.values():
+            if cur_group in card:
+                card_field = card[cur_group]  # type: ignore
+                fields.add(card_field)
+    fields.add(None)
+
+    for f in fields:
+        if len(groups) == 1:
+            output[f] = []
+        else:
+            output[f] = Groups()
+
+    # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
+    # But - this is clearer, and don't want to prematurely optimize
+    for card in collection.values():
+        card_field = card.get(cur_group)  # type: ignore
+        if card_field:
+            if not isinstance(card_field, str):
+                msg = f"{card['index']} can't group by {cur_group}: must be string."
+                if config.strict:
+                    raise ValidationError(msg)
+                else:
+                    logger.warn(msg)
+                    continue
+            else:
+                field = card_field.casefold()
+        else:
+            field = None
+
+        if len(groups) == 1:
+            output_collection = output[field]
+            assert isinstance(output_collection, list)
+            output_collection.append(card)
+
+    return output
