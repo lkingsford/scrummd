@@ -1,5 +1,5 @@
 from typing import Any, Optional, TypedDict
-from scrummd.exceptions import ValidationError
+from scrummd.exceptions import ValidationError, InvalidRestrictedFieldValueError
 
 from scrummd.config import ScrumConfig
 from scrummd.md import extract_collection, extract_fields
@@ -53,6 +53,13 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
         raise ValidationError('"summary" expected but not present')
     if isinstance(fields["summary"], list):
         raise ValidationError('"summary" must not be a list')
+
+    for key, value in fields.items():
+        if key in config.fields:
+            if value not in config.fields[key]:
+                raise InvalidRestrictedFieldValueError(
+                    f'Per configuration, {key} must be one of {" ".join(config.fields[key])}'
+                )
 
     fields["_defined_collections"] = {}
     if "items" in fields:

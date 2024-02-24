@@ -123,13 +123,27 @@ Configuration can be stored in the priority order of:
 -   `.scrum.toml`
 -   `scrum.toml`
 -   `pyproject.taml`.
--   In all cases, under the `[tools.scrummd]` heading.
+-   In all cases, under the `[tools.scrummd]` table.
 
 Initial settings that are supported are
 
-| Setting      | Description                                                           |
-| ------------ | --------------------------------------------------------------------- |
-| strict       | Fail on any issue with the collection rather than trying to persevere |
-| scrum_path   | Path of the scrum cards/meta                                          |
-| columns      | Array of columns to show with `sbl`                                   |
-| omit_headers | Hide headers from `sbl` output                                        |
+| Setting      | type         | Description                                                           |
+| ------------ | ------------ | --------------------------------------------------------------------- |
+| strict       | bool         | Fail on any issue with the collection rather than trying to persevere |
+| scrum_path   | str          | Path of the scrum cards/meta                                          |
+| columns      | array of str | Array of columns to show with `sbl`                                   |
+| omit_headers | bool         | Hide headers from `sbl` output                                        |
+| fields       | table        | Limit fields to specific values. Each member is an array of str.      |
+
+#### Example Config
+
+```toml
+[tool.scrummd]
+strict = true
+scrum_path = "scrum"
+columns = ["index", "status", "summary"]
+omit_headers = false
+
+[tool.scrummd.fields]
+status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
+```
