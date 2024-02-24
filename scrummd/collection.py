@@ -124,7 +124,7 @@ def group_collection(
 
     cur_group = groups[0].casefold()
     predefined = cur_group in [k.casefold() for k in config.fields.keys()]
-    output: Groups = {}
+    card_groups: Groups = {}
     fields: set[Optional[str]] = set()
 
     if predefined:
@@ -138,14 +138,14 @@ def group_collection(
         for card in collection.values():
             if cur_group in card:
                 card_field = card[cur_group]  # type: ignore
-                fields.add(card_field)
+                fields.add(card_field.casefold())
     fields.add(None)
 
     for f in fields:
         if len(groups) == 1:
-            output[f] = []
+            card_groups[f] = []
         else:
-            output[f] = Groups()
+            card_groups[f] = Groups()
 
     # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
     # But - this is clearer, and don't want to prematurely optimize
@@ -164,9 +164,9 @@ def group_collection(
         else:
             field = None
 
-        if len(groups) == 1:
-            output_collection = output[field]
-            assert isinstance(output_collection, list)
-            output_collection.append(card)
+        output_collection = card_groups[field]
+        assert isinstance(output_collection, list)
+        output_collection.append(card)
 
-    return output
+    if len(groups) == 1:
+        return card_groups
