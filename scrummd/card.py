@@ -56,9 +56,9 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
 
     for key, value in fields.items():
         if key in config.fields:
-            if value not in config.fields[key]:
+            if value.lower() not in [f.lower() for f in config.fields[key]]:
                 raise InvalidRestrictedFieldValueError(
-                    f'Per configuration, {key} must be one of {" ".join(config.fields[key])}'
+                    f'{key} is "{value}". Per configuration, {key} must be one of [{", ".join(config.fields[key])}]'
                 )
 
     fields["_defined_collections"] = {}
