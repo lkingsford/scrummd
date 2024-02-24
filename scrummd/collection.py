@@ -1,11 +1,16 @@
+from argparse import ArgumentError
+from collections import OrderedDict
 import os
 import pathlib
-from typing import Optional
+from typing import Optional, Union
 import scrummd.card
 import logging
 from scrummd.config import ScrumConfig
+from scrummd.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+
+Collection = dict[str, scrummd.card.Card]
 
 
 class DuplicateIndexError(ValueError):
@@ -19,7 +24,7 @@ class DuplicateIndexError(ValueError):
 
 def get_collection(
     config: ScrumConfig, collection_name: Optional[str] = None
-) -> dict[str, scrummd.card.Card]:
+) -> Collection:
     """Get a collection of cards
 
     Args:
@@ -85,7 +90,9 @@ def get_collection(
             ):
                 collection[index] = card
 
-        for collection_subname, _collection in card["_defined_collections"].items():
+        for collection_subname, _defined_collection in card[
+            "_defined_collections"
+        ].items():
             current_collection_name = (
                 index if collection_subname == "" else f"{index}.{collection_subname}"
             )
@@ -93,7 +100,79 @@ def get_collection(
                 current_collection_name == collection_name
                 or current_collection_name.startswith(collection_name + ".")
             ):
-                for card_index in _collection:
+                for card_index in _defined_collection:
                     collection[card_index] = all_cards[card_index]
 
     return collection
+
+
+Groups = dict[Optional[str], Union["Groups", list[scrummd.card.Card]]]
+
+
+def group_collection(
+    config: ScrumConfig, collection: Collection, groups: list[str]
+) -> Groups:
+    """Group collection into (potentially nested) groups by the field in the Card
+
+    Args:
+        config (ScrumConfig): Scrum config
+        collection (Collection): Collection of cards to group
+        groups (list[str]): All the groups that need to be made
+
+    Returns:
+        Groups: A dict with the group value, and either more groups or the field value
+    """
+
+    cur_group = groups[0].casefold()
+    predefined = cur_group in [k.casefold() for k in config.fields.keys()]
+    card_groups: Groups = OrderedDict()
+
+    if predefined:
+        group = next(
+            fields
+            for key, fields in config.fields.items()
+            if key.casefold() == cur_group
+        )
+        for f in [f.casefold() for f in group]:
+            card_groups[f] = []
+    else:
+        fields: set[str] = set()
+        for card in collection.values():
+            if cur_group in card:
+                card_field = card[cur_group]  # type: ignore
+                fields.add(card_field.casefold())
+        ordered_fields = sorted(fields)
+        for f in ordered_fields:
+            card_groups[f] = []
+
+    card_groups[None] = []
+
+    # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
+    # But - this is clearer, and don't want to prematurely optimize
+    for card in collection.values():
+        card_field = card.get(cur_group)  # type: ignore
+        if card_field:
+            if not isinstance(card_field, str):
+                msg = f"{card['index']} can't group by {cur_group}: must be string."
+                if config.strict:
+                    raise ValidationError(msg)
+                else:
+                    logger.warn(msg)
+                    continue
+            else:
+                field = card_field.casefold()
+        else:
+            field = None
+
+        output_collection = card_groups[field]
+        assert isinstance(output_collection, list)
+        output_collection.append(card)
+
+    if len(groups) == 1:
+        return card_groups
+
+    # This is not particularly clear - if there's more groups to embed, recurse.
+    return {
+        key: group_collection(config, {c["index"]: c for c in group}, groups[1:])  # type: ignore
+        for key, group in card_groups.items()
+    }

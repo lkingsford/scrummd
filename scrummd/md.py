@@ -10,7 +10,7 @@ def get_block_name(md_line: str) -> str:
     """Get the name of the block from the header line"""
     results = re.match(r"\#+(.*)", md_line)
     if results is not None:
-        return results.group(1).lower().strip()
+        return results.group(1).casefold().strip()
     else:
         raise ValidationError("%s has no valid header", md_line)
 
@@ -19,7 +19,7 @@ def split_property(md_line: str) -> tuple[str, str]:
     """Split the property"""
     results = re.match(r"\W*([^\:]+)\:(.*)", md_line)
     if results is not None:
-        return (results.group(1).lower().strip(), results.group(2).strip())
+        return (results.group(1).casefold().strip(), results.group(2).strip())
     else:
         raise ValidationError("Error parsing property line %s", md_line)
 

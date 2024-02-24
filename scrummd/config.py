@@ -20,5 +20,5 @@ class ScrumConfig:
     omit_headers: bool = False
     """Omit headers from output"""
 
-    fields: dict[str, str] = field(default_factory=dict)
+    fields: dict[str, list[str]] = field(default_factory=dict)
     """Fields with limited permitted values and defined order"""
