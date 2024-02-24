@@ -142,10 +142,7 @@ def group_collection(
     fields.add(None)
 
     for f in fields:
-        if len(groups) == 1:
-            card_groups[f] = []
-        else:
-            card_groups[f] = Groups()
+        card_groups[f] = []
 
     # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
     # But - this is clearer, and don't want to prematurely optimize
@@ -170,3 +167,9 @@ def group_collection(
 
     if len(groups) == 1:
         return card_groups
+
+    # This is not particularly clear - if there's more groups to embed, recurse.
+    return {
+        key: group_collection(config, {c["index"]: c for c in group}, groups[1:])  # type: ignore
+        for key, group in card_groups.items()
+    }
