@@ -42,7 +42,7 @@ A card's index (card number) is its file name. All cards **must** have a summary
 ### `sbl`
 
 ```
-usage: sbl [-h] [-c [COLUMNS]] [-b] [-o] [collection]
+usage: sbl [-h] [-c [COLUMNS]] [-b] [-H] [-g GROUP_BY] [collection]
 
 Display a collection of scrum cards
 
@@ -53,8 +53,10 @@ options:
   -h, --help            show this help message and exit
   -c [COLUMNS], --columns [COLUMNS]
                         A comma separated list of columns to return.
-  -b, --bare            Return bare paths only suitable for scripting. Effectively shorthand for `sbl -o -c _path`.
-  -o, --omit-headers    Omit headers from output.
+  -b, --bare            Return bare paths only suitable for scripting. Effectively shorthand for `sbl -H -c _path`.
+  -H, --omit-headers    Omit headers from output.
+  -g GROUP_BY, --group-by GROUP_BY
+                        Group by field in card. Can use multiple group-by arguments to have multiple levels of grouping.
 ```
 
 ### `scard`
