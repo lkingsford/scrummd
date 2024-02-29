@@ -1,6 +1,6 @@
 import os
 import pytest
-import scrummd.md as md
+import scrummd.source_md as source_md
 
 # Should these be one fixture?
 
@@ -35,14 +35,14 @@ def c5_md() -> str:
 
 def test_extract_property_from_full_file(md1_fo):
     """Test extracting property variables from an md file"""
-    results = md.extract_fields(md1_fo.read())
+    results = source_md.extract_fields(md1_fo.read())
     assert results["summary"] == "Summary of card"
     assert results["status"] == "Status of card"
 
 
 def test_extract_header(md1_fo):
     """Test extracting header style variables from an md file"""
-    results = md.extract_fields(md1_fo.read())
+    results = source_md.extract_fields(md1_fo.read())
     assert (
         results["description"].strip()
         == """Multi line description
@@ -62,7 +62,7 @@ here"""
 )
 def test_get_block_name(expected, result):
     """Verify that get_block_name returns the string part of # headers"""
-    assert md.get_block_name(expected) == result
+    assert source_md.get_block_name(expected) == result
 
 
 @pytest.mark.parametrize(
@@ -75,24 +75,24 @@ def test_get_block_name(expected, result):
 )
 def test_extract_property(input, expected):
     """Verify that the property is extracted with expected key and value"""
-    assert md.split_property(input) == expected
+    assert source_md.split_property(input) == expected
 
 
 def test_extract_property_list(c4_md):
     """Tests that the list from a property is correctly extracted"""
-    results = md.extract_fields(c4_md.read())
+    results = source_md.extract_fields(c4_md.read())
     assert sorted(results["tags"]) == ["special", "special2"]
 
 
 def test_extract_header_list(c5_md):
     """Tests that the list from a header is correctly extracted"""
-    results = md.extract_fields(c5_md.read())
+    results = source_md.extract_fields(c5_md.read())
     assert sorted(results["tags"]) == ["special", "special2", "special3"]
 
 
 def test_ignore_code_block(md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
-    results = md.extract_fields(md2_fo.read())
+    results = source_md.extract_fields(md2_fo.read())
     # This would be 'Test Card 4' if it read inside the code block
     assert results["summary"] == "Test Card With Code"
     # This wouldn't be there if the block wasn't there as a string
@@ -111,5 +111,5 @@ def test_ignore_code_block(md2_fo):
     ],
 )
 def test_extract_collection(input, expected):
-    results = md.extract_collection(input)
+    results = source_md.extract_collection(input)
     assert results == expected

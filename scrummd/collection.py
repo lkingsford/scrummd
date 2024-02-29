@@ -3,14 +3,14 @@ from collections import OrderedDict
 import os
 import pathlib
 from typing import Optional, Union
-import scrummd.card
+from scrummd.card import Card, fromStr
 import logging
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
-Collection = dict[str, scrummd.card.Card]
+Collection = dict[str, Card]
 
 
 class DuplicateIndexError(ValueError):
@@ -35,11 +35,11 @@ def get_collection(
         DuplicateIndexError: A card with an index is found twice
 
     Returns:
-        dict[str, scrummd.card.Card]: A dict with the index of the card, and a card object
+        dict[str, Card]: A dict with the index of the card, and a card object
     """
 
-    all_cards: dict[str, scrummd.card.Card] = {}
-    collection: dict[str, scrummd.card.Card] = {}
+    all_cards: dict[str, Card] = {}
+    collection: dict[str, Card] = {}
     collection_path = pathlib.Path(config.scrum_path)
     for root, _, files in os.walk(collection_path, followlinks=True):
         # So - this'll turn "scrum/backlog/special" into "backlog.special"
@@ -57,9 +57,7 @@ def get_collection(
             try:
                 with open(path, "r") as fo:
                     contents = fo.read()
-                    card = scrummd.card.fromStr(
-                        config, contents, [collection_from_path]
-                    )
+                    card = fromStr(config, contents, [collection_from_path])
                     index = card["index"] or path.name.split(".")[0]
                     if index in all_cards:
                         raise DuplicateIndexError(index, path)
@@ -67,7 +65,7 @@ def get_collection(
                     card["_path"] = str(path)
                     all_cards[index] = card
 
-            except scrummd.card.ValidationError as ex:
+            except ValidationError as ex:
                 if config.strict:
                     logging.error("ValidationError (%s) reading %s", ex, path)
                     raise
@@ -106,7 +104,7 @@ def get_collection(
     return collection
 
 
-Groups = dict[Optional[str], Union["Groups", list[scrummd.card.Card]]]
+Groups = dict[Optional[str], Union["Groups", list[Card]]]
 
 
 def group_collection(

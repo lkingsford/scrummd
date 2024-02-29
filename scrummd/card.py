@@ -1,8 +1,7 @@
 from typing import Any, Optional, TypedDict
 from scrummd.exceptions import ValidationError, InvalidRestrictedFieldValueError
-
 from scrummd.config import ScrumConfig
-from scrummd.md import extract_collection, extract_fields
+from scrummd.source_md import extract_collection, extract_fields
 
 
 class Card(TypedDict):
