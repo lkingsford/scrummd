@@ -1,0 +1,109 @@
+"""Generate a collection, and time accessing it for benchmarking common scrummd functions."""
+
+import argparse
+from pathlib import Path
+from statistics import mean
+import timeit
+import logging
+import tempfile
+import contextlib
+from collections.abc import Iterator
+import random
+from scrummd.collection import get_collection
+
+from scrummd.config import ScrumConfig
+
+
+def rand_str(size: int):
+    return "".join(
+        [
+            random.choice("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ")
+            for _ in range(size)
+        ]
+    )
+
+
+@contextlib.contextmanager
+def scrum_repo(count: int, references: int, minsize: int) -> Iterator[ScrumConfig]:
+    """Create a temporary folder full of cards
+
+    Args:
+        count (int): Amount of files to generate
+        references (int): Amount of card references to add to each card
+        minsize (int): Min size of each card in bytes
+
+    Returns:
+        ScrumConfig: The ScrumConfig to load files with
+    """
+    logging.info("Creating scrum repo")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        for cardno in range(count):
+            path = Path(tmpdir, f"c{cardno}.md")
+            with open(path, "w") as card_f:
+                logging.debug("Writing %s", [path])
+                cur_references: list[str] = []
+                contents = f"---\n summary: {rand_str(50)}\n---"
+                block_count = 0
+                while len(contents) < minsize and len(cur_references) < references:
+                    block_count += 1
+                    block_type = random.choice(["str", "list"])
+                    contents += f"\n\n#header{block_count} \n\n"
+                    if block_type == "str":
+                        while random.random() > 0.2:
+                            contents += rand_str(10)
+                            if random.random() < 0.3:
+                                reference = f"c{random.choice(range(count))}"
+                                cur_references.append(reference)
+                                contents += f"[[{reference}]]"
+                            if random.random() < 0.2:
+                                contents += "\n"
+                    if block_type == "list":
+                        while random.random() > 0.2:
+                            contents += "\n- "
+                            if random.random() < 0.5:
+                                contents += rand_str(50)
+                            else:
+                                reference = f"c{random.choice(range(count))}"
+                                cur_references.append(reference)
+                                contents += f"[[{reference}]]"
+
+                card_f.write(contents)
+
+        yield ScrumConfig(scrum_path=tmpdir)
+    logging.info("Cleaned up")
+
+
+def entry():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--count", help="Count of files to attempt collection with", default=10000
+    )
+    parser.add_argument(
+        "--references", help="Amount of references to add in each card", default=10
+    )
+    parser.add_argument(
+        "--size", help="Minimum size of each card in bytes", default=1000
+    )
+    parser.add_argument("--times", help="Times to test collection", default=5)
+    # parser.add_argument(
+    #    "--cache", help="Test twice each time to test caching time", action="store_true"
+    # )
+    parser.add_argument("-v", help="Level of verbosity", action="count", default=0)
+
+    parser.description == __doc__
+    args = parser.parse_args()
+
+    logging.basicConfig(level=30 - args.v * 10)
+
+    with scrum_repo(int(args.count), int(args.references), int(args.size)) as config:
+        times = []
+        print(f"get_collection executions")
+        for count in range(int(args.times)):
+            ex_time = timeit.timeit(lambda: get_collection(config), number=1)
+            times.append(ex_time)
+            print(f"{count}: {ex_time} s")
+        print(f" Avg: {mean(times)} s")
+
+
+if __name__ == "__main__":
+    entry()

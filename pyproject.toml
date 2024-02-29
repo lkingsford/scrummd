@@ -7,6 +7,7 @@ dependencies = ['importlib-metadata; python_version<"3.11"', 'tomli-w']
 [project.scripts]
 "sbl" = "scrummd:sbl_entry"
 "scard" = "scrummd:scard_entry"
+"sbench" = "scrummd:sbench_entry"
 
 [build-system]
 requires = ["setuptools", "mypy", "pytest", "pylint"]

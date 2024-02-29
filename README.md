@@ -81,6 +81,23 @@ options:
   -h, --help  show this help message and exit
 ```
 
+### `sbench`
+
+```
+usage: sbench [-h] [--count COUNT] [--references REFERENCES] [--size SIZE] [--times TIMES] [-v]
+
+Generate a collection, and time accessing it for benchmarking common scrummd functions.
+
+options:
+  -h, --help            show this help message and exit
+  --count COUNT         Count of files to attempt collection with
+  --references REFERENCES
+                        Amount of references to add in each card
+  --size SIZE           Minimum size of each card in bytes
+  --times TIMES         Times to test collection
+  -v                    Level of verbosity
+```
+
 ### Fields
 
 The following special fields are available:
