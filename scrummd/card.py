@@ -62,12 +62,17 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
 
     fields["_defined_collections"] = {}
     if "items" in fields:
-        fields["_defined_collections"][""] = extract_collection(fields["items"])
+        extracted_collection = extract_collection(fields["items"])
+        fields["_defined_collections"][""] = [
+            card["cardIndex"] for card in extracted_collection
+        ]
 
     for key, value in fields.items():
         if value is not None and (isinstance(value, str) or isinstance(value, list)):
-            collection = extract_collection(value)
-            if len(collection) > 0:
-                fields["_defined_collections"][key] = collection
+            extracted_collection = extract_collection(value)
+            if len(extracted_collection) > 0:
+                fields["_defined_collections"][key] = [
+                    card["cardIndex"] for card in extracted_collection
+                ]
 
     return Card(**fields)  # type: ignore

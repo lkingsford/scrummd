@@ -1,7 +1,7 @@
 import re
 
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Optional, Any, TypedDict, Union
 
 from scrummd.exceptions import ValidationError
 
@@ -42,8 +42,13 @@ def split_list_item(md_line: str) -> str:
 _extract_re = re.compile(r"\[\[([^\]\n]*)\]\]")
 
 
-def extract_collection(field_value: Union[str, list[str]]) -> list[str]:
-    """Extract all of the card ids from a field (str or list of strings)
+class ExtractedCard(TypedDict):
+    cardIndex: str
+    span: tuple[int, int]
+
+
+def extract_collection(field_value: Union[str, list[str]]) -> list[ExtractedCard]:
+    """Extract all of the cards from a field (str or list of strings)
 
     Args:
         field_value (Union[str, list[str]]): Field from the md file
@@ -54,7 +59,8 @@ def extract_collection(field_value: Union[str, list[str]]) -> list[str]:
     field_list = field_value if isinstance(field_value, list) else [field_value]
     results = []
     for value in field_list:
-        results.extend(_extract_re.findall(value))
+        for match in _extract_re.finditer(value):
+            results.append(ExtractedCard(cardIndex=match.group(1), span=match.span()))
     return results
 
 

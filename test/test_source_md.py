@@ -110,6 +110,8 @@ def test_ignore_code_block(md2_fo):
         [["[[card1]]", "[[card2]][[card3]]"], ["card1", "card2", "card3"]],
     ],
 )
-def test_extract_collection(input, expected):
+def test_extract_collection_indexes(input, expected):
+    """Test that the indexes extract collection returns are correct"""
     results = source_md.extract_collection(input)
-    assert results == expected
+    indexes = list([r["cardIndex"] for r in results])
+    assert indexes == expected
