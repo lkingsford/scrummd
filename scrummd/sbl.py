@@ -5,6 +5,9 @@ import argparse
 from scrummd.collection import Groups, get_collection, group_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
+from scrummd.exceptions import ValidationError
+
+VALIDATION_ERROR = 1
 
 
 def entry():
@@ -45,7 +48,11 @@ def entry():
 
     config = load_fs_config()
 
-    collection = get_collection(config, args.collection)
+    try:
+        collection = get_collection(config, args.collection)
+    except ValidationError:
+        if config.strict:
+            return VALIDATION_ERROR
 
     if args.columns:
         columns = [column.strip() for column in args.columns.split(",")]
