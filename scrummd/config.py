@@ -22,3 +22,6 @@ class ScrumConfig:
 
     fields: dict[str, list[str]] = field(default_factory=dict)
     """Fields with limited permitted values and defined order"""
+
+    scard_reference_format: str = "[$index]"
+    """Fields to show when a card is referenced in a field in `scard`"""

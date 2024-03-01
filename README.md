@@ -129,13 +129,14 @@ Configuration can be stored in the priority order of:
 
 Initial settings that are supported are
 
-| Setting      | type         | Description                                                           |
-| ------------ | ------------ | --------------------------------------------------------------------- |
-| strict       | bool         | Fail on any issue with the collection rather than trying to persevere |
-| scrum_path   | str          | Path of the scrum cards/meta                                          |
-| columns      | array of str | Array of columns to show with `sbl`                                   |
-| omit_headers | bool         | Hide headers from `sbl` output                                        |
-| fields       | table        | Limit fields to specific values. Each member is an array of str.      |
+| Setting                | type         | Description                                                                                      |
+| ---------------------- | ------------ | ------------------------------------------------------------------------------------------------ |
+| strict                 | bool         | Fail on any issue with the collection rather than trying to persevere                            |
+| scrum_path             | str          | Path of the scrum cards/meta                                                                     |
+| columns                | array of str | Array of columns to show with `sbl`                                                              |
+| omit_headers           | bool         | Hide headers from `sbl` output                                                                   |
+| fields                 | table        | Limit fields to specific values. Each member is an array of str.                                 |
+| scard_reference_format | str          | Format of `[[card]]` fields when shown in `sbl`. Replaces `$field` with the field from the card. |
 
 #### Example Config
 
@@ -144,8 +145,11 @@ Initial settings that are supported are
 strict = true
 scrum_path = "scrum"
 columns = ["index", "status", "summary"]
+scard_reference_format = "$index [$status] ($assignee)"
 omit_headers = false
 
 [tool.scrummd.fields]
 status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
 ```
+
+#### `scard_reference_format`

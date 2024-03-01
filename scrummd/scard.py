@@ -2,10 +2,68 @@
 
 import argparse
 import logging
-from scrummd.collection import get_collection
+import re
+from scrummd.card import Card
+from scrummd.collection import Collection, get_collection
+from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
+from scrummd.source_md import CardComponent, FieldStr, StringComponent
 
 logger = logging.getLogger(__name__)
+
+_field_re = re.compile(r"\$(\w+)")
+
+
+def format_card(config: ScrumConfig, card: Card) -> str:
+    """Format a card per the config
+
+    Args:
+        config (ScrumConfig): Active scrum configuration
+        card (Card): Card to format
+
+    Returns:
+        str: Card formatted per configuration
+    """
+    format = config.scard_reference_format
+    output = _field_re.sub(
+        lambda m: str(card[m.group(1)]) if m.group(1) in card else "", format
+    )
+    return output
+
+
+def output_value(config: ScrumConfig, value: FieldStr, collection: Collection) -> str:
+    """Generate the formatted output value for the field from the components
+
+    Args:
+        config (ScrumConfig): Active scrum configuration
+        value (FieldStr): Value to generate output for
+        collection (Collection): Full collection of cards for reference's sake
+
+    Returns:
+        str: Output ready field
+    """
+    output = ""
+    if not isinstance(value, FieldStr) and isinstance(value, str):
+        # Likely index
+        return value
+
+    for component in value.components():
+        if isinstance(component, StringComponent):
+            output += component.value
+        elif isinstance(component, CardComponent):
+            card = collection.get(component.cardIndex)
+            if card:
+                output += format_card(config, card)
+            else:
+                output += f"[[{component.cardIndex}]] (NOT FOUND)"
+                logger.warning(
+                    f"Card index {component.cardIndex} not found when expanding"
+                )
+                # Should strict fail here?
+        else:
+            raise ValueError("Component of invalid type")
+
+    return output
 
 
 def entry():
@@ -34,15 +92,16 @@ def entry():
             if v is None:
                 continue
 
+            formatted_value = output_value(config, v, collection)
             if isinstance(v, list):
-                print(f"- {v}")
+                print(f"- {formatted_value}")
             elif v.find("\n") > 0:
                 print(f"# {k}")
-                print(v)
+                print(formatted_value)
                 print()
 
             else:
-                print(f"{k}: {v}")
+                print(f"{k}: {formatted_value}")
 
 
 if __name__ == "__main__":

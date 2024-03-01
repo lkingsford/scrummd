@@ -3,11 +3,7 @@ import pytest
 
 from scrummd.config import ScrumConfig
 from scrummd.collection import get_collection, group_collection
-
-
-@pytest.fixture(scope="session")
-def data_config() -> ScrumConfig:
-    return ScrumConfig(scrum_path="test/data", fields={"Status": ["Ready", "Done"]})
+from fixtures import data_config
 
 
 def test_get_basic_collection(data_config):
