@@ -113,3 +113,28 @@ def test_ignore_code_block(md2_fo):
 def test_extract_collection(input, expected):
     results = source_md.extract_collection(input)
     assert results == expected
+
+
+@pytest.mark.parametrize(
+    ["input", "expected"],
+    [
+        ["test", [source_md.StringComponent("test")]],
+        [
+            "test[[card]]test2",
+            [
+                source_md.StringComponent("test"),
+                source_md.CardComponent("card"),
+                source_md.StringComponent("test2"),
+            ],
+        ],
+        ["[[card]]", [source_md.CardComponent("card")]],
+        [
+            "[[card]][[card2]]",
+            [source_md.CardComponent("card"), source_md.CardComponent("card2")],
+        ],
+    ],
+)
+def test_fieldstr_component(input, expected):
+    """Test that the components of a str are properly separated"""
+    field = source_md.FieldStr(input)
+    assert field.components() == expected

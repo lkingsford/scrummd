@@ -1,9 +1,72 @@
+from dataclasses import dataclass
 import re
 
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Optional, Any, Tuple, TypedDict, Union
 
 from scrummd.exceptions import ValidationError
+
+
+class FieldComponent:
+    """A section of the field component"""
+
+    pass
+
+
+@dataclass
+class CardComponent(FieldComponent):
+    """A component of the field that refers to a card"""
+
+    cardIndex: str
+
+
+@dataclass
+class StringComponent(FieldComponent):
+    """A component of the field that is just a string"""
+
+    value: str
+
+
+_extract_re = re.compile(r"\[\[([^\]\n]*)\]\]")
+"""Regex expression used to extract the [[cardindexes]] out of a field"""
+
+
+class FieldStr(str):
+    """A str with the extra parsed information from the str"""
+
+    _components: list[FieldComponent]
+
+    def __init__(self, value):
+        super().__init__()
+        self._components = None
+
+    def components(self) -> list[FieldComponent]:
+        """Break the field string into its components. This can be used for when the card is outputted to - for instance - format the strings.
+
+        Returns:
+            list[FieldComponent]: All the components of the str.
+        """
+
+        # Caching in case used again. Only need to do once, because strings are immutable.
+        if self._components:
+            return self._components
+
+        self._components = []
+        cursor = 0
+        for match in _extract_re.finditer(self):
+            if match.start() != cursor:
+                self._components.append(StringComponent(self[cursor : match.start()]))
+
+            self._components.append(CardComponent(match.group(1)))
+            cursor = match.end()
+        if cursor != len(self):
+            self._components.append(StringComponent(self[cursor:]))
+
+        return self._components
+
+
+Field = Union[FieldStr, list[FieldStr]]
+"""A field from the md file"""
 
 
 def get_block_name(md_line: str) -> str:
@@ -37,9 +100,6 @@ def split_list_item(md_line: str) -> str:
         return md_line[1:].strip()
     else:
         return ""
-
-
-_extract_re = re.compile(r"\[\[([^\]\n]*)\]\]")
 
 
 def extract_collection(field_value: Union[str, list[str]]) -> list[str]:
@@ -80,7 +140,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
     All keys are case insensitive and made lowercase.
     """
 
-    fields: dict[str, Any] = {}
+    fields: dict[str, Field] = {}
 
     class BlockStatus(Enum):
         NO_BLOCK = 0
@@ -114,7 +174,9 @@ def extract_fields(md_file: str) -> dict[str, Any]:
         if block_status == BlockStatus.IN_PROPERTY_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
                 value = split_list_item(stripped_line)
-                fields[list_field_key].append(value)
+                field_list = fields[list_field_key]
+                assert isinstance(field_list, list)
+                field_list.append(FieldStr(value))
                 continue
             else:
                 list_field_key = ""
@@ -132,13 +194,15 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 list_field_key = key
                 fields[list_field_key] = []
             else:
-                fields[key] = value
+                fields[key] = FieldStr(value)
             continue
 
         if block_status == BlockStatus.IN_HEADER_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
                 value = split_list_item(stripped_line)
-                fields[list_field_key].append(value)
+                field_list = fields[list_field_key]
+                assert isinstance(field_list, list)
+                field_list.append(FieldStr(value))
                 continue
             else:
                 list_field_key = ""
@@ -155,13 +219,13 @@ def extract_fields(md_file: str) -> dict[str, Any]:
             if stripped_line == "---":
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
                 if block_name is not None:
-                    fields[block_name] = block_value
+                    fields[block_name] = FieldStr(block_value)
                 block_value = ""
                 continue
             elif stripped_line[0] == "#":
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 if block_name is not None:
-                    fields[block_name] = block_value.strip()
+                    fields[block_name] = FieldStr(block_value.strip())
                 block_name = get_block_name(stripped_line)
                 block_value = ""
                 continue
@@ -169,7 +233,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 block_status = BlockStatus.IN_HEADER_LIST
                 if block_name is not None:
                     list_field_key = block_name
-                fields[list_field_key] = [split_list_item(stripped_line)]
+                fields[list_field_key] = [FieldStr(split_list_item(stripped_line))]
             elif "```" in stripped_line:
                 block_status = BlockStatus.IN_CODE_BLOCK
                 block_value += line + "\n"
@@ -178,6 +242,6 @@ def extract_fields(md_file: str) -> dict[str, Any]:
 
     if block_status == BlockStatus.IN_HEADER_BLOCK:
         if block_name is not None:
-            fields[block_name] = block_value
+            fields[block_name] = FieldStr(block_value)
 
     return fields
