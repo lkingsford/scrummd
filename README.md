@@ -1,8 +1,18 @@
 ## ScrumMD
 
-**ScrumMD** is a phenomenally bad idea made into an experiment. With no specific plan as to whether that experiment will be finished. Here's what it is:
+**ScrumMD** started with a question: What if we could have a scrum board driven entirely by md files and the CLI, and use it with git?
 
-What if we could have a scrum board driven entirely by md files and the CLI, and use it with git?
+I know that it's going to be of niche use, but it opens up a number of great ways to do the scrum process. For instance:
+
+-   You can run standup for `sprint1` with:
+
+```bash
+vim `sbl -b sprint1`
+```
+
+-   You can manage your cards with git...
+-   ... and can add them in the repository that they are for
+-   It's all text - so integrate with whatever you want
 
 ## License
 
