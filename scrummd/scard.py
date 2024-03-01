@@ -66,17 +66,16 @@ def output_value(config: ScrumConfig, value: FieldStr, collection: Collection) -
     return output
 
 
-def entry():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("card", nargs="*", help="Index of cards to return")
-    parser.description == __doc__
-    args = parser.parse_args()
+def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list[str]):
+    """Output cards to stdout
 
-    config = load_fs_config()
+    Args:
+        config (ScrumConfig): Current configuration
+        collection (Collection): Complete collection of cards
+        card_index (list[str]): Indexes of cards to output
+    """
 
-    collection = get_collection(config)
-
-    for card_index in args.card:
+    for card_index in card_indexes:
         if card_index not in collection:
             logger.error("Card %s not found", card_index)
             continue
@@ -102,6 +101,19 @@ def entry():
 
             else:
                 print(f"{k}: {formatted_value}")
+
+
+def entry():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("card", nargs="*", help="Index of cards to return")
+    parser.description == __doc__
+    args = parser.parse_args()
+
+    config = load_fs_config()
+
+    collection = get_collection(config)
+
+    output_cards(config, collection, args.card)
 
 
 if __name__ == "__main__":
