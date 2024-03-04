@@ -74,8 +74,21 @@ options:
 ```
 usage: scard [-h] [card ...]
 
+Display any number of scrum cards
+
 positional arguments:
   card        Index of cards to return
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### `svalid`
+
+```
+`usage: svalid [-h]
+
+Return an exit code if there's any invalid files, or rules being broken. Returns: 0 if Successful; 1 if Exception Raised; 2 if Invalid File; 3 if Rules Violation.
 
 options:
   -h, --help  show this help message and exit

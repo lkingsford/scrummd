@@ -1,5 +1,8 @@
 from typing import Any, Optional, TypedDict
-from scrummd.exceptions import ValidationError, InvalidRestrictedFieldValueError
+from scrummd.exceptions import (
+    InvalidFileError,
+    InvalidRestrictedFieldValueError,
+)
 from scrummd.config import ScrumConfig
 from scrummd.source_md import extract_collection, extract_fields
 
@@ -23,7 +26,7 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
         collection (list[str]): Collections the card is known to be in. Defaults to [].
 
     Raises:
-        ValidationError: Error with the MD file
+        InvalidFileError: Error with the MD file
 
     Returns:
         Card: The card for the md file
@@ -35,23 +38,23 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
         if isinstance(fields["collections"], list):
             fields["_collections"].extend(fields["collections"])
         else:
-            raise ValidationError('"Collections" (if present) must be a list')
+            raise InvalidFileError('"Collections" (if present) must be a list')
 
     if "tags" in fields:
         if isinstance(fields["tags"], list):
             fields["_collections"].extend(fields["tags"])
         else:
-            raise ValidationError('"tags" (if present) must be a list')
+            raise InvalidFileError('"tags" (if present) must be a list')
 
     if "index" not in fields:
         fields["index"] = None
     else:
         if isinstance(fields["index"], list):
-            raise ValidationError('"index" must not be a list')
+            raise InvalidFileError('"index" must not be a list')
     if "summary" not in fields:
-        raise ValidationError('"summary" expected but not present')
+        raise InvalidFileError('"summary" expected but not present')
     if isinstance(fields["summary"], list):
-        raise ValidationError('"summary" must not be a list')
+        raise InvalidFileError('"summary" must not be a list')
 
     for key, value in fields.items():
         if key in config.fields:

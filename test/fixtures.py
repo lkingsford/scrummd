@@ -9,7 +9,7 @@ def data_config() -> ScrumConfig:
     """Data config with common parameters for tests"""
     return ScrumConfig(
         scrum_path="test/data",
-        fields={"Status": ["Ready", "Done"]},
+        fields={"status": ["Ready", "Done"]},
     )
 
 

@@ -2,9 +2,9 @@ from dataclasses import dataclass
 import re
 
 from enum import Enum
-from typing import Optional, Any, Tuple, TypedDict, Union
+from typing import Optional, Any, Union
 
-from scrummd.exceptions import ValidationError
+from scrummd.exceptions import InvalidFileError
 
 
 class FieldComponent:
@@ -75,7 +75,7 @@ def get_block_name(md_line: str) -> str:
     if results is not None:
         return results.group(1).casefold().strip()
     else:
-        raise ValidationError("%s has no valid header", md_line)
+        raise InvalidFileError("%s has no valid header", md_line)
 
 
 def split_property(md_line: str) -> tuple[str, str]:
@@ -84,7 +84,7 @@ def split_property(md_line: str) -> tuple[str, str]:
     if results is not None:
         return (results.group(1).casefold().strip(), results.group(2).strip())
     else:
-        raise ValidationError("Error parsing property line %s", md_line)
+        raise InvalidFileError("Error parsing property line %s", md_line)
 
 
 def split_list_item(md_line: str) -> str:
@@ -187,7 +187,7 @@ def extract_fields(md_file: str) -> dict[str, Any]:
                 block_status = BlockStatus.NO_BLOCK
                 continue
             if ":" not in stripped_line:
-                raise ValidationError("Invalid property line %s", stripped_line)
+                raise InvalidFileError("Invalid property line %s", stripped_line)
             key, value = split_property(stripped_line)
             if value == "":
                 block_status = BlockStatus.IN_PROPERTY_LIST

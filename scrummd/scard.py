@@ -106,7 +106,7 @@ def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list
 def entry():
     parser = argparse.ArgumentParser()
     parser.add_argument("card", nargs="*", help="Index of cards to return")
-    parser.description == __doc__
+    parser.description = __doc__
     args = parser.parse_args()
 
     config = load_fs_config()

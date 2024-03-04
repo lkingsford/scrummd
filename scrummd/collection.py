@@ -6,20 +6,11 @@ from typing import Optional, Union
 from scrummd.card import Card, fromStr
 import logging
 from scrummd.config import ScrumConfig
-from scrummd.exceptions import ValidationError
+from scrummd.exceptions import ValidationError, DuplicateIndexError
 
 logger = logging.getLogger(__name__)
 
 Collection = dict[str, Card]
-
-
-class DuplicateIndexError(ValueError):
-    """Called when an index of a card is declared twice in the collection."""
-
-    def __init__(self, index, path):
-        self.index = index
-        self.path = path
-        super().__init__(f"Duplicate index {self.index} found in {self.path}")
 
 
 def get_collection(
