@@ -3,6 +3,7 @@ name = "scrummd"
 authors = [{ name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com" }]
 version = "0.0.1"
 dependencies = ['importlib-metadata; python_version<"3.11"']
+readme = "README.md"
 
 [project.scripts]
 "sbl" = "scrummd:sbl_entry"
