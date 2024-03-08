@@ -6,6 +6,7 @@ from scrummd.collection import Groups, get_collection, group_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
+from scrummd.scard import format_field
 
 VALIDATION_ERROR = 1
 
@@ -27,7 +28,7 @@ def entry():
         "-b",
         "--bare",
         action="store_true",
-        help="Return bare paths only suitable for scripting. Effectively shorthand for `sbl -H -c _path`.",
+        help="Return bare paths only suitable for scripting. Effectively shorthand for `sbl -H -c path`.",
     )
     parser.add_argument(
         "-H",
@@ -62,7 +63,7 @@ def entry():
     omit_headers = args.omit_headers or config.omit_headers
 
     if args.bare:
-        columns = ["_path"]
+        columns = ["path"]
         omit_headers = True
 
     if not omit_headers:
@@ -70,9 +71,7 @@ def entry():
 
     if not args.group_by:
         for card in collection.values():
-            values = [
-                card[col] if (col in card and card[col]) else "" for col in columns
-            ]
+            values = [format_field(card.get_field(col)) for col in columns]
             print(", ".join(values))
 
     else:
@@ -96,10 +95,7 @@ def entry():
 
                 else:
                     for card in cards:
-                        values = [
-                            card[col] if (col in card and card[col]) else ""
-                            for col in columns
-                        ]
+                        values = [format_field(card.get_field(col)) for col in columns]
                         print(", ".join(values))
 
         output_group(config, grouped, args.group_by)

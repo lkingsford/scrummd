@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import InvalidRestrictedFieldValueError
@@ -17,8 +18,10 @@ summary: valid
 key: valid
 ---
 """
-    card = scrummd.card.fromStr(data_config, valid_card)
-    assert card["key"] == "valid"
+    card = scrummd.card.fromStr(
+        data_config, valid_card, "collection", Path("collection/card.md")
+    )
+    assert card.get_field("key") == "valid"
 
 
 def test_invalid_restricted_field(data_config):
@@ -30,4 +33,6 @@ key: invalid
 ---
 """
     with pytest.raises(InvalidRestrictedFieldValueError):
-        card = scrummd.card.fromStr(data_config, invalid_card)
+        card = scrummd.card.fromStr(
+            data_config, invalid_card, "collection", Path("collection/card.md")
+        )
