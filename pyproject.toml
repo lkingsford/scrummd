@@ -1,7 +1,7 @@
 [project]
 name = "scrummd"
 authors = [{ name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com" }]
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = ['importlib-metadata; python_version<"3.11"']
 readme = "README.md"
 
@@ -12,11 +12,13 @@ readme = "README.md"
 "svalid" = "scrummd:svalid_entry"
 
 [build-system]
-requires = ["setuptools", "mypy", "pytest", "pylint"]
+requires = ["setuptools", "mypy", "pytest", "pylint", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 exclude = ["scrum", "test", "docs"]
+
+[tool.setuptools_scm]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
