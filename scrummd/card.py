@@ -1,29 +1,75 @@
-from typing import Any, Optional, TypedDict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 from scrummd.exceptions import (
     InvalidFileError,
     InvalidRestrictedFieldValueError,
 )
 from scrummd.config import ScrumConfig
-from scrummd.source_md import extract_collection, extract_fields
+from scrummd.source_md import FieldStr, extract_collection, extract_fields, Field
 
 
-class Card(TypedDict):
+@dataclass
+class Card:
     """A Scrum 'Card' - might be a chunk of work, might be an epic, might be a ticket."""
 
-    index: Optional[str]
+    index: str
+    """Index of the card"""
+
     summary: str
-    _collections: list[str]
-    _defined_collections: dict[str, list[str]]
-    _path: str
+    """Title of the card - used by default in places like output"""
+
+    collections: list[str]
+    """Collections that the card is in"""
+
+    defined_collections: dict[str, list[str]]
+    """Collections that are defined by this card"""
+
+    path: str
+    """Path of the file for this card"""
+
+    udf: dict[str, Field]
+    """All additional fields in the file"""
+
+    def get_field(self, field_name: str) -> Optional[Field]:
+        """Get a field from either the card if present, or UDF if not
+
+        Args:
+            field_name (str): Field to retrieve
+
+        Returns:
+            Field: Field from Card, or UDF if not present
+        """
+        if field_name not in NON_UDF_FIELDS:
+            return self.udf.get(field_name)
+
+        if field_name == "index":
+            return FieldStr(self.index)
+        if field_name == "summary":
+            return FieldStr(self.summary)
+        if field_name == "_path":
+            return FieldStr(self.path)
+
+        raise NotImplementedError("%f not yet available for output", [field_name])
 
 
-def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> Card:
+NON_UDF_FIELDS = ["summary", "collections", "tags", "index"]
+"""Fields that are read into the Card itself rather than into the UDF"""
+
+
+def fromStr(
+    config: ScrumConfig,
+    input_card: str,
+    collection: str,
+    path: Path,
+) -> Card:
     """Create a card from a string (usually, the file)
 
     Args:
         config (ScrumConfig): ScrummMD configuration to use.
-        inputCard (str): String containing the card data from the file.
-        collection (list[str]): Collections the card is known to be in. Defaults to [].
+        input_card (str): String containing the card data from the file.
+        collection (str): Collection the card is known to be in.
+        index_from_filename (str): Index suggested by the filename of the card
 
     Raises:
         InvalidFileError: Error with the MD file
@@ -31,26 +77,29 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
     Returns:
         Card: The card for the md file
     """
-    fields: dict[str, Any] = extract_fields(inputCard)
-    fields["_collections"] = collection
+    fields: dict[str, Field] = extract_fields(input_card)
+    collections: list[str] = [collection]
+    index = path.name.split(".")[0]
+    udf: dict[str, Field] = {k: v for k, v in fields.items() if k not in NON_UDF_FIELDS}
 
     if "collections" in fields:
         if isinstance(fields["collections"], list):
-            fields["_collections"].extend(fields["collections"])
+            collections.extend(fields["collections"])
         else:
             raise InvalidFileError('"Collections" (if present) must be a list')
 
     if "tags" in fields:
-        if isinstance(fields["tags"], list):
-            fields["_collections"].extend(fields["tags"])
+        tags = fields["tags"]
+        if isinstance(tags, list):
+            collections.extend(fields["tags"])
         else:
             raise InvalidFileError('"tags" (if present) must be a list')
 
-    if "index" not in fields:
-        fields["index"] = None
-    else:
+    if "index" in fields:
         if isinstance(fields["index"], list):
             raise InvalidFileError('"index" must not be a list')
+        index = fields["index"]
+
     if "summary" not in fields:
         raise InvalidFileError('"summary" expected but not present')
     if isinstance(fields["summary"], list):
@@ -58,19 +107,28 @@ def fromStr(config: ScrumConfig, inputCard: str, collection: list[str] = []) -> 
 
     for key, value in fields.items():
         if key in config.fields:
-            if value.lower() not in [f.lower() for f in config.fields[key]]:
+            if isinstance(value, str) and value.lower() not in [
+                f.lower() for f in config.fields[key]
+            ]:
                 raise InvalidRestrictedFieldValueError(
                     f'{key} is "{value}". Per configuration, {key} must be one of [{", ".join(config.fields[key])}]'
                 )
 
-    fields["_defined_collections"] = {}
+    defined_collections: dict[str, list[str]] = {}
     if "items" in fields:
-        fields["_defined_collections"][""] = extract_collection(fields["items"])
+        defined_collections[index] = extract_collection(fields["items"])
 
     for key, value in fields.items():
         if value is not None and (isinstance(value, str) or isinstance(value, list)):
-            collection = extract_collection(value)
-            if len(collection) > 0:
-                fields["_defined_collections"][key] = collection
+            defined_collection = extract_collection(value)
+            if len(defined_collection) > 0:
+                defined_collections[key] = defined_collection
 
-    return Card(**fields)  # type: ignore
+    return Card(
+        path=str(path),
+        summary=fields["summary"],
+        index=index,
+        collections=collections,
+        defined_collections=defined_collections,
+        udf=udf,
+    )

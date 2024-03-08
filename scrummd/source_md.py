@@ -102,7 +102,7 @@ def split_list_item(md_line: str) -> str:
         return ""
 
 
-def extract_collection(field_value: Union[str, list[str]]) -> list[str]:
+def extract_collection(field_value: Field) -> list[str]:
     """Extract all of the card ids from a field (str or list of strings)
 
     Args:
@@ -118,7 +118,7 @@ def extract_collection(field_value: Union[str, list[str]]) -> list[str]:
     return results
 
 
-def extract_fields(md_file: str) -> dict[str, Any]:
+def extract_fields(md_file: str) -> dict[str, Field]:
     """Extract all fields from the md_file
 
     There are two types of fields:

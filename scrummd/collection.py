@@ -48,13 +48,10 @@ def get_collection(
             try:
                 with open(path, "r") as fo:
                     contents = fo.read()
-                    card = fromStr(config, contents, [collection_from_path])
-                    index = card["index"] or path.name.split(".")[0]
-                    if index in all_cards:
-                        raise DuplicateIndexError(index, path)
-                    card["index"] = index
-                    card["_path"] = str(path)
-                    all_cards[index] = card
+                    card = fromStr(config, contents, collection_from_path, path)
+                    if card.index in all_cards:
+                        raise DuplicateIndexError(card.index, path)
+                    all_cards[card.index] = card
 
             except ValidationError as ex:
                 if config.strict:
@@ -73,15 +70,13 @@ def get_collection(
         return all_cards
 
     for index, card in all_cards.items():
-        for _collection in card["_collections"]:
+        for _collection in card.collections:
             if _collection == collection_name or _collection.startswith(
                 collection_name + "."
             ):
                 collection[index] = card
 
-        for collection_subname, _defined_collection in card[
-            "_defined_collections"
-        ].items():
+        for collection_subname, _defined_collection in card.defined_collections.items():
             current_collection_name = (
                 index if collection_subname == "" else f"{index}.{collection_subname}"
             )
@@ -127,8 +122,8 @@ def group_collection(
     else:
         fields: set[str] = set()
         for card in collection.values():
-            if cur_group in card:
-                card_field = card[cur_group]  # type: ignore
+            card_field = card.get_field(cur_group)
+            if isinstance(card_field, str):
                 fields.add(card_field.casefold())
         ordered_fields = sorted(fields)
         for f in ordered_fields:
@@ -139,10 +134,10 @@ def group_collection(
     # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
     # But - this is clearer, and don't want to prematurely optimize
     for card in collection.values():
-        card_field = card.get(cur_group)  # type: ignore
+        card_field = card.get_field(cur_group)
         if card_field:
             if not isinstance(card_field, str):
-                msg = f"{card['index']} can't group by {cur_group}: must be string."
+                msg = f"{card.get_field('index')} can't group by {cur_group}: must be string."
                 if config.strict:
                     raise ValidationError(msg)
                 else:
@@ -162,6 +157,8 @@ def group_collection(
 
     # This is not particularly clear - if there's more groups to embed, recurse.
     return {
-        key: group_collection(config, {c["index"]: c for c in group}, groups[1:])  # type: ignore
+        key: group_collection(
+            config, {c.index: c for c in group if isinstance(c, Card)}, groups[1:]
+        )
         for key, group in card_groups.items()
     }

@@ -3,15 +3,27 @@
 import argparse
 import logging
 import re
+from typing import Optional
 from scrummd.card import Card
 from scrummd.collection import Collection, get_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
-from scrummd.source_md import CardComponent, FieldStr, StringComponent
+from scrummd.source_md import CardComponent, Field, FieldStr, StringComponent
 
 logger = logging.getLogger(__name__)
 
 _field_re = re.compile(r"\$(\w+)")
+
+
+def format_field(value: Optional[Field]) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return f"[{', '.join(value)}]"
+    else:
+        raise TypeError("Unsupported type %f", type(value))
 
 
 def format_card(config: ScrumConfig, card: Card) -> str:
@@ -25,9 +37,8 @@ def format_card(config: ScrumConfig, card: Card) -> str:
         str: Card formatted per configuration
     """
     format = config.scard_reference_format
-    output = _field_re.sub(
-        lambda m: str(card[m.group(1)]) if m.group(1) in card else "", format
-    )
+
+    output = _field_re.sub(lambda m: format_field(card.get_field(m.group(1))), format)
     return output
 
 
@@ -81,25 +92,24 @@ def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list
             continue
         card = collection[card_index]
         print("---")
-        print(f"{card_index}: {card['summary']}")
+        print(f"{card_index}: {card.summary}")
         print("---")
-        for k, v in card.items():
-            if k == "summary":
-                continue
-            if k[0] == "_":
-                continue
+        for k, v in card.udf.items():
             if v is None:
                 continue
 
-            formatted_value = output_value(config, v, collection)
             if isinstance(v, list):
-                print(f"- {formatted_value}")
+                for item in v:
+                    formatted_value = output_value(config, item, collection)
+                    print(f"- {formatted_value}")
             elif v.find("\n") > 0:
+                formatted_value = output_value(config, v, collection)
                 print(f"# {k}")
                 print(formatted_value)
                 print()
 
             else:
+                formatted_value = output_value(config, v, collection)
                 print(f"{k}: {formatted_value}")
 
 
