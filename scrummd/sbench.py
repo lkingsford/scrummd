@@ -10,7 +10,7 @@ import contextlib
 from collections.abc import Iterator
 import random
 from scrummd.collection import get_collection
-
+from scrummd.version import version_to_output
 from scrummd.config import ScrumConfig
 
 
@@ -94,6 +94,11 @@ def create_parser() -> argparse.ArgumentParser:
     #    "--cache", help="Test twice each time to test caching time", action="store_true"
     # )
     parser.add_argument("-v", help="Level of verbosity", action="count", default=0)
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=version_to_output(),
+    )
     parser.description == __doc__
 
     return parser

@@ -12,6 +12,7 @@ from scrummd.collection import get_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import InvalidFileError, RuleViolationError
+from scrummd.version import version_to_output
 
 
 class ExitCode(Enum):
@@ -50,6 +51,11 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser()
     parser.description = __doc__
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=version_to_output(),
+    )
     return parser
 
 
