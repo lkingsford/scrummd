@@ -11,7 +11,12 @@ from scrummd.scard import format_field
 VALIDATION_ERROR = 1
 
 
-def entry():
+def create_parser() -> argparse.ArgumentParser:
+    """Create an argument parser for sbl
+
+    Returns:
+        argparse.ArgumentParser: ArgumentParser for sbl
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "collection",
@@ -45,6 +50,12 @@ def entry():
     )
 
     parser.description = __doc__
+    return parser
+
+
+def entry():
+    """Entry point for sbl"""
+    parser = create_parser()
     args = parser.parse_args()
 
     config = load_fs_config()

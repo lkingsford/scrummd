@@ -113,11 +113,21 @@ def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list
                 print(f"{k}: {formatted_value}")
 
 
-def entry():
+def create_parser() -> argparse.ArgumentParser:
+    """Create an argument parser for scard
+
+    Returns:
+        ArgumentParser: Argument parser to use
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("card", nargs="*", help="Index of cards to return")
     parser.description = __doc__
-    args = parser.parse_args()
+    return parser
+
+
+def entry():
+    """Entry point for scard"""
+    args = create_parser().parse_args()
 
     config = load_fs_config()
 

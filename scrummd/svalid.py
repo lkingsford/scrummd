@@ -42,10 +42,20 @@ def get_exit_code(config: ScrumConfig) -> ExitCode:
     return ExitCode.SUCCESSFUL
 
 
-def entry() -> None:
+def create_parser() -> argparse.ArgumentParser:
+    """Create an argument parser for svalid
+
+    Returns:
+        argparse.ArgumentParser: ArgumentParser for svalid
+    """
     parser = argparse.ArgumentParser()
     parser.description = __doc__
-    parser.parse_args()
+    return parser
+
+
+def entry() -> None:
+    """Entry point"""
+    args = create_parser().parse_args()
 
     config = load_fs_config()
 

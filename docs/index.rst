@@ -9,7 +9,8 @@ ScrumMD
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
+
+   commands/commands 
    source/scrummd
 
 Indices and tables
