@@ -5,10 +5,13 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+from scrummd import _version
+
 
 project = "ScrumMD"
 copyright = "2024, Lachlan Kingsford"
 author = "Lachlan Kingsford"
+version = _version.version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
