@@ -2,8 +2,9 @@
 name = "scrummd"
 authors = [{ name = "Lachlan Kingsford", email = "lachlan@nerdygentleman.com" }]
 dynamic = ["version"]
-dependencies = ['importlib-metadata; python_version<"3.11"']
+dependencies = ['importlib-metadata; python_version>="3.11"']
 readme = "README.md"
+requires-python = ">=3.11"
 
 [project.scripts]
 "sbl" = "scrummd:sbl_entry"
