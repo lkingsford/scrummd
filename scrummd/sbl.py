@@ -7,6 +7,7 @@ from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
 from scrummd.scard import format_field
+from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
 
@@ -49,6 +50,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Group by field in card. Can use multiple group-by arguments to have multiple levels of grouping.",
     )
 
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=version_to_output(),
+    )
     parser.description = __doc__
     return parser
 

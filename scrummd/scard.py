@@ -9,6 +9,7 @@ from scrummd.collection import Collection, get_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.source_md import CardComponent, Field, FieldStr, StringComponent
+from scrummd.version import version_to_output
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,11 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("card", nargs="*", help="Index of cards to return")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=version_to_output(),
+    )
     parser.description = __doc__
     return parser
 
