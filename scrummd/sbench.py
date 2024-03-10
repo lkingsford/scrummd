@@ -73,7 +73,12 @@ def scrum_repo(count: int, references: int, minsize: int) -> Iterator[ScrumConfi
     logging.info("Cleaned up")
 
 
-def entry():
+def create_parser() -> argparse.ArgumentParser:
+    """Return argument parser for sbench
+
+    Returns:
+        ArgumentParser: Parser for sbench
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--count", help="Count of files to attempt collection with", default=10000
@@ -89,9 +94,15 @@ def entry():
     #    "--cache", help="Test twice each time to test caching time", action="store_true"
     # )
     parser.add_argument("-v", help="Level of verbosity", action="count", default=0)
-
     parser.description == __doc__
-    args = parser.parse_args()
+
+    return parser
+
+
+def entry():
+    """Entry point for sbench"""
+
+    args = create_parser().parse_args()
 
     logging.basicConfig(level=30 - args.v * 10)
 

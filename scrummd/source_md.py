@@ -122,14 +122,8 @@ def extract_fields(md_file: str) -> dict[str, Field]:
     """Extract all fields from the md_file
 
     There are two types of fields:
-    - 'Property' style fields:
-      ---
-      `Key: Value`
-      `Key2: Value2`
-      ---
+    - 'Property' style fields
     - 'md header' style fields:
-      `# key
-      Value
 
     There are two types of value:
     - Strings
@@ -138,6 +132,12 @@ def extract_fields(md_file: str) -> dict[str, Field]:
     Lists are defined as items in a list of items starting with '-' and ending with a newline following the header or property.
 
     All keys are case insensitive and made lowercase.
+
+    Args:
+        md_file (str): Contents of file to get data out of
+
+    Returns:
+        dict[str, Field]: a dictionary of all field names and values
     """
 
     fields: dict[str, Field] = {}
