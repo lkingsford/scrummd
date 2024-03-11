@@ -6,12 +6,32 @@
 ScrumMD |version|
 ===================================
 
+Welcome to the documentation for ScrumMD.
+
+**ScrumMD** has tools for self-organising teams to manage cards written in md.
+As the name suggests, it was originally designed for teams to use in the Scrum
+process, but it can also be used for:
+
+- Kanban style processes
+- Tracking bugs and issues
+- Tracking decisions or questions
+
+It still has room to grow, but the fundamental tools are there to use it.
+:ref:`gettingstarted` shows you how to use it, and offers suggestions about how
+to create a workflow around it.
+
+The CLI commands and library are documented here. It is recommended that you use
+the library with Python if you're wanting to automate parts of the process
+rather than relying on the output of the CLI commands.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   gettingstarted
    commands/commands 
    source/scrummd
+   semver
 
 Indices and tables
 ==================
