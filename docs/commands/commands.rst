@@ -1,4 +1,4 @@
-ScrummMD Commands
+ScrumMD Commands
 *****************
 
 .. toctree::

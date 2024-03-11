@@ -66,7 +66,7 @@ def fromStr(
     """Create a card from a string (usually, the file)
 
     Args:
-        config (ScrumConfig): ScrummMD configuration to use.
+        config (ScrumConfig): ScrumMD configuration to use.
         input_card (str): String containing the card data from the file.
         collection (str): Collection the card is known to be in.
         index_from_filename (str): Index suggested by the filename of the card
