@@ -1,0 +1,7 @@
+[tool.scrummd]
+strict = true
+scard_reference_format = "$index - $summary [$status]"
+
+[tool.scrummd.fields]
+severity = ["High", "Medium", "Low"]
+status = ["Ready For Development", "In Progress", "Done"]

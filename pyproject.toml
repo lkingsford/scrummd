@@ -21,6 +21,7 @@ requires = [
     "setuptools_scm",
     "sphinx",
     "sphinx-argparse",
+    "sphinx-rtd-theme",
 ]
 build-backend = "setuptools.build_meta"
 

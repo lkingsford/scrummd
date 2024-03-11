@@ -1,0 +1,5 @@
+[tool.scrummd]
+strict = true
+
+[tool.scrummd.fields]
+severity = ["High", "Medium", "Low"]
