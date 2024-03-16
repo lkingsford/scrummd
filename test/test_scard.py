@@ -1,6 +1,6 @@
 from copy import copy
 from pathlib import Path
-from scrummd.card import Card, fromStr
+from scrummd.card import Card, from_str
 from scrummd.scard import output_value, format_card
 from fixtures import data_config, test_collection
 import pytest
@@ -15,7 +15,7 @@ key: Field [[c1]]
 key 2: [[c2]][[c3]]
 ---
 """
-    card = fromStr(data_config, test_card, "collection", Path("collection/card.md"))
+    card = from_str(data_config, test_card, "collection", Path("collection/card.md"))
     return card
 
 

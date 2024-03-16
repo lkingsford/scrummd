@@ -92,6 +92,18 @@ Description
 
 Format of ``[[card]]`` fields when shown by ``scard``. Replaces ``$field`` with the field from the card.
 
+``required``
+
+Type
+""""
+
+array of str
+
+Description
+"""""""""""
+
+List of fields that must be present in all cards.
+
 ``[tools.scrummd.fields]``
 ##########################
 
@@ -109,7 +121,6 @@ Description
 Limit *field name* to specific values. Each member is an array of str.
 
 
-
 Example configuration file
 ==========================
 
@@ -121,6 +132,7 @@ Example configuration file
     columns = ["index", "status", "summary"]
     scard_reference_format = "$index [$status] ($assignee)"
     omit_headers = false
+    required = ["status"]
 
     [tool.scrummd.fields]
     status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
