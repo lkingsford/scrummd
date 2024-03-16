@@ -54,7 +54,7 @@ class Card:
         raise NotImplementedError("%f not yet available for output", [field_name])
 
 
-def assertValidFields(config: ScrumConfig, fields: dict[str, Field]) -> None:
+def assert_valid_fields(config: ScrumConfig, fields: dict[str, Field]) -> None:
     """Raise an error if there is an (internal or config) rule violation
 
     Args:
@@ -108,7 +108,7 @@ NON_UDF_FIELDS = ["summary", "collections", "tags", "index"]
 """Fields that are read into the Card itself rather than into the UDF"""
 
 
-def fromStr(
+def from_str(
     config: ScrumConfig,
     input_card: str,
     collection: str,
@@ -133,7 +133,7 @@ def fromStr(
     index = path.name.split(".")[0]
     udf: dict[str, Field] = {k: v for k, v in fields.items() if k not in NON_UDF_FIELDS}
 
-    assertValidFields(config, fields)
+    assert_valid_fields(config, fields)
 
     if "index" in fields:
         assert isinstance(fields["index"], str)

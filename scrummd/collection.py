@@ -3,7 +3,7 @@ from collections import OrderedDict
 import os
 import pathlib
 from typing import Optional, Union
-from scrummd.card import Card, fromStr
+from scrummd.card import Card, from_str
 import logging
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import ValidationError, DuplicateIndexError
@@ -48,7 +48,7 @@ def get_collection(
             try:
                 with open(path, "r") as fo:
                     contents = fo.read()
-                    card = fromStr(config, contents, collection_from_path, path)
+                    card = from_str(config, contents, collection_from_path, path)
                     if card.index in all_cards:
                         raise DuplicateIndexError(card.index, path)
                     all_cards[card.index] = card

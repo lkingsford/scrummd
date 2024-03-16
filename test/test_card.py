@@ -22,7 +22,7 @@ summary: valid
 key: valid
 ---
 """
-    card = scrummd.card.fromStr(
+    card = scrummd.card.from_str(
         data_config, valid_card, "collection", Path("collection/card.md")
     )
     assert card.get_field("key") == "valid"
@@ -37,7 +37,7 @@ key: invalid
 ---
 """
     with pytest.raises(InvalidRestrictedFieldValueError):
-        card = scrummd.card.fromStr(
+        card = scrummd.card.from_str(
             data_config, invalid_card, "collection", Path("collection/card.md")
         )
 
@@ -52,7 +52,7 @@ required: present
 """
     config = copy(data_config)
     config.required = ["required"]
-    scrummd.card.fromStr(config, valid_card, "collection", Path("collection/1md"))
+    scrummd.card.from_str(config, valid_card, "collection", Path("collection/1md"))
     # Here means test passed
 
 
@@ -67,4 +67,6 @@ summary: valid
     config.scrum_path += "/fail_cases/no_status/"
     config.required = ["required"]
     with pytest.raises(RequiredFieldNotPresentError):
-        scrummd.card.fromStr(config, invalid_card, "collection", Path("collection/1md"))
+        scrummd.card.from_str(
+            config, invalid_card, "collection", Path("collection/1md")
+        )
