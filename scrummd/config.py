@@ -25,3 +25,6 @@ class ScrumConfig:
 
     scard_reference_format: str = "[$index]"
     """Fields to show when a card is referenced in a field in `scard`"""
+
+    required: list[str] = field(default_factory=list)
+    """Fields that are required to be in a card"""
