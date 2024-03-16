@@ -1,5 +1,6 @@
 from argparse import ArgumentError
 from collections import OrderedDict
+import itertools
 import os
 import pathlib
 from typing import Optional, Union
@@ -66,28 +67,55 @@ def get_collection(
                 else:
                     logging.warn("%s ignored", path)
 
+    collections: dict[str, Collection] = {}
+
+    # Get all the cards in each collection per implicit collection from folder
+    # and collections listed in the card
+    for index, card in all_cards.items():
+        for _collection in card.collections:
+            # The partial name stuff here is because if a card is in
+            # 'collection.subcollection', it's also in 'collection' implicitly
+            # - accumulate with that lambda means that for A.B.C, it adds it to
+            # A, then A.B, then A.B.C
+            for partial_name in itertools.accumulate(
+                _collection.split("."), lambda i, j: f"{i}.{j}"
+            ):
+                if partial_name in collections:
+                    collections[partial_name][index] = card
+                else:
+                    collections[partial_name] = {index: card}
+
+    # Get all the collections defined in a card in the fields. Again - needs to
+    # add to parent collections too.
+    # Holy horizontal ladder, Batman!
+    for index, card in all_cards.items():
+        for defined_name, defined_collection in card.defined_collections.items():
+            for referenced_card_index in defined_collection:
+                if referenced_card_index not in all_cards:
+                    # Card not found
+                    continue
+
+                if defined_name in collections:
+                    collections[defined_name][referenced_card_index] = all_cards[
+                        referenced_card_index
+                    ]
+                else:
+                    collections[defined_name] = {
+                        referenced_card_index: all_cards[referenced_card_index]
+                    }
+                if index in collections:
+                    collections[index][referenced_card_index] = all_cards[
+                        referenced_card_index
+                    ]
+                else:
+                    collections[index] = {
+                        referenced_card_index: all_cards[referenced_card_index]
+                    }
+
     if not collection_name:
         return all_cards
 
-    for index, card in all_cards.items():
-        for _collection in card.collections:
-            if _collection == collection_name or _collection.startswith(
-                collection_name + "."
-            ):
-                collection[index] = card
-
-        for collection_subname, _defined_collection in card.defined_collections.items():
-            current_collection_name = (
-                index if collection_subname == "" else f"{index}.{collection_subname}"
-            )
-            if (
-                current_collection_name == collection_name
-                or current_collection_name.startswith(collection_name + ".")
-            ):
-                for card_index in _defined_collection:
-                    collection[card_index] = all_cards[card_index]
-
-    return collection
+    return collections.get(collection_name) or {}
 
 
 Groups = dict[Optional[str], Union["Groups", list[Card]]]

@@ -155,7 +155,7 @@ def from_str(
         if value is not None and (isinstance(value, str) or isinstance(value, list)):
             defined_collection = extract_collection(value)
             if len(defined_collection) > 0:
-                defined_collections[key] = defined_collection
+                defined_collections[f"{index}.{key}"] = defined_collection
 
     assert isinstance(fields["summary"], str)
     return Card(
