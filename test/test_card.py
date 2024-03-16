@@ -1,7 +1,11 @@
+from copy import copy
 from pathlib import Path
 import pytest
 from scrummd.config import ScrumConfig
-from scrummd.exceptions import InvalidRestrictedFieldValueError
+from scrummd.exceptions import (
+    InvalidRestrictedFieldValueError,
+    RequiredFieldNotPresentError,
+)
 import scrummd.card
 
 
@@ -36,3 +40,31 @@ key: invalid
         card = scrummd.card.fromStr(
             data_config, invalid_card, "collection", Path("collection/card.md")
         )
+
+
+def test_required_present(data_config):
+    """Test that a collection with a required field by config that's present works"""
+    valid_card = """
+---
+summary: valid
+required: present
+---
+"""
+    config = copy(data_config)
+    config.required = ["required"]
+    scrummd.card.fromStr(config, valid_card, "collection", Path("collection/1md"))
+    # Here means test passed
+
+
+def test_required_missing(data_config):
+    """Test that a collection with a required field by config that's not present fails"""
+    invalid_card = """
+---
+summary: valid
+---
+"""
+    config = copy(data_config)
+    config.scrum_path += "/fail_cases/no_status/"
+    config.required = ["required"]
+    with pytest.raises(RequiredFieldNotPresentError):
+        scrummd.card.fromStr(config, invalid_card, "collection", Path("collection/1md"))

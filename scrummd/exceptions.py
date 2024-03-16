@@ -35,3 +35,9 @@ class InvalidGroupError(ValueError):
     """Called when a field is not a valid group"""
 
     pass
+
+
+class RequiredFieldNotPresentError(RuleViolationError):
+    """Called when a field required by config isn't present"""
+
+    pass
