@@ -1,6 +1,6 @@
 """The ScrumConfig class to configure processing scrum files."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from scrummd import const
 
 
@@ -28,3 +28,21 @@ class ScrumConfig:
 
     required: list[str] = field(default_factory=list)
     """Fields that are required to be in a card"""
+
+    @dataclass
+    class CollectionConfig:
+        """Config for a specific collection only"""
+
+        required: list[str] = field(default_factory=list)
+        """Fields that are required to be in a card"""
+
+        fields: dict[str, list[str]] = field(default_factory=dict)
+        """Fields with limited permitted values and defined order"""
+
+    collections: dict[str, CollectionConfig] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Fix up 'CollectionConfig' which is erroneously a dict after initialising"""
+
+        for key, collection in self.collections.items():
+            self.collections[key] = ScrumConfig.CollectionConfig(**collection)
