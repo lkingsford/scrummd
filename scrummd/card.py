@@ -144,10 +144,14 @@ def from_str(
         config (ScrumConfig): ScrumMD configuration to use.
         input_card (str): String containing the card data from the file.
         collection (str): Collection the card is known to be in.
-        index_from_filename (str): Index suggested by the filename of the card
+        path (Path): Path of the file
 
     Raises:
         InvalidFileError: Error with the MD file
+        InvalidRestrictedFieldValueError: A field with restricted permitted
+            values per config has another value present.
+        RequiredFieldNotPresentError: A field required by the config is not
+            present
 
     Returns:
         Card: The card for the md file
