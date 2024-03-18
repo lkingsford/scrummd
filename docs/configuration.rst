@@ -6,10 +6,6 @@ Configuration
 Configuration files
 ===================
 
-.. note::
-    It is intended that additional configuration will be able to be set on a per
-    collection and per card basis. This is not implemented yet.
-
 ScrumMD is configured by a toml file. The first of the following files available
 will be read for configuration:
 
@@ -18,6 +14,9 @@ will be read for configuration:
 -   ``pyproject.toml``
 
 All fields in the ``[tool.scrummd]`` collection.
+
+Where fields are listed as ``[tool.scrummd.fieldname]``, they should be in
+square brackets as TOML categories/arrays.
 
 Supported fields
 ================
@@ -104,11 +103,8 @@ Description
 
 List of fields that must be present in all cards.
 
-``[tools.scrummd.fields]``
-##########################
-
-*field name*
-^^^^^^^^^^^^
+``[tools.scrummd.fields.<field name>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Type
 """"
@@ -120,6 +116,36 @@ Description
 
 Limit *field name* to specific values. Each member is an array of str.
 
+``[tools.scrummd.collections.<collection name>]``
+#################################################
+
+Additional restrictions which apply only to a specific collection.
+
+``required``
+
+Type
+""""
+
+array of str
+
+Description
+"""""""""""
+
+List of fields that must be present in all cards in the collection.
+
+``[tools.scrummd.collections.<collection name>.fields.<field name>]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+array of str
+
+Description
+"""""""""""
+
+Limit *field name* to specific values for all cards in the collection. Each
+member is an array of str.
 
 Example configuration file
 ==========================
@@ -136,3 +162,9 @@ Example configuration file
 
     [tool.scrummd.fields]
     status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
+
+    [tool.scrummd.collections.epic]
+    required = ["cost centre", "members"]
+
+    [tool.scrummd.collections.epic.fields]
+    cost_status = ["Not Costed", "Fully Costed"]
