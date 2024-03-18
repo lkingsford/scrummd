@@ -1,9 +1,11 @@
+from copy import copy
 import os
 import pytest
 
 from scrummd.config import ScrumConfig
 from scrummd.collection import get_collection, group_collection
 from fixtures import data_config
+from scrummd.exceptions import RuleViolationError
 
 
 def test_get_basic_collection(data_config):
@@ -107,3 +109,17 @@ def test_multiple_groupbys(data_config):
     assert set((card.index for card in grouped["ready"]["bob"])) == set(["c1"])
     assert set((card.index for card in grouped["ready"]["mary"])) == set(["c2"])
     assert set((card.index for card in grouped["done"]["bob"])) == set(["c3"])
+
+
+def test_collection_with_rules(data_config):
+    """Test that a card with valid collection-level rules is added"""
+    collection4 = get_collection(data_config, "collection4").values()
+    assert set((card.index for card in collection4)) == set(["c7"])
+
+
+def test_collection_with_invalid_collection_rules(data_config):
+    """Test that a card violating collection rules raises an error"""
+    config = copy(data_config)
+    config.scrum_path = "test/fail_cases/collection_rule_violation"
+    with pytest.raises(RuleViolationError):
+        get_collection(config, "collection4")

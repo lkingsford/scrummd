@@ -64,7 +64,7 @@ summary: valid
 ---
 """
     config = copy(data_config)
-    config.scrum_path += "/fail_cases/no_status/"
+    config.scrum_path = "test/fail_cases/no_status/"
     config.required = ["required"]
     with pytest.raises(RequiredFieldNotPresentError):
         scrummd.card.from_str(

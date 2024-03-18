@@ -1,6 +1,6 @@
 ---
 Summary: Summary of card
-Status: Status of card
+Status: Ready
 ---
 
 # Description

@@ -33,7 +33,7 @@ def test_output_value(data_config, test_card, test_collection):
 
 
 @pytest.fixture()
-def sample_card():
+def sample_card(data_config):
     return Card(
         index="i",
         summary="1",
@@ -41,6 +41,7 @@ def sample_card():
         defined_collections=[],
         path="test/i.md",
         udf={"assignee": "me"},
+        _config=data_config,
     )
 
 

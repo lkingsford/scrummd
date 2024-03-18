@@ -31,7 +31,7 @@ def get_collection(
     """
 
     all_cards: dict[str, Card] = {}
-    collection: dict[str, Card] = {}
+
     collection_path = pathlib.Path(config.scrum_path)
     for root, _, files in os.walk(collection_path, followlinks=True):
         # So - this'll turn "scrum/backlog/special" into "backlog.special"
@@ -59,13 +59,13 @@ def get_collection(
                     logging.error("ValidationError (%s) reading %s", ex, path)
                     raise
                 else:
-                    logging.warn("ValidationError (%s) reading %s", ex, path)
+                    logging.warning("ValidationError (%s) reading %s", ex, path)
 
             except DuplicateIndexError as ex:
                 if config.strict:
                     raise
                 else:
-                    logging.warn("%s ignored", path)
+                    logging.warning("%s ignored", path)
 
     collections: dict[str, Collection] = {}
 
@@ -111,6 +111,21 @@ def get_collection(
                     collections[index] = {
                         referenced_card_index: all_cards[referenced_card_index]
                     }
+
+    # Validate that all cards in a collection are valid per its rules in config
+    for _collection_name, collection in collections.items():
+        collection_config = config.collections.get(_collection_name)
+        if not collection_config:
+            continue
+        for index, card in collection.items():
+            try:
+                card.assert_valid_rules(collection_config)
+            except ValidationError as ex:
+                if config.strict:
+                    logging.error("ValidationError (%s) reading %s", ex, path)
+                    raise
+                else:
+                    logging.warn("ValidationError (%s) reading %s", ex, path)
 
     if not collection_name:
         return all_cards

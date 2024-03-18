@@ -5,8 +5,19 @@ from scrummd import const
 
 
 @dataclass
-class ScrumConfig:
-    """The current configuration for processing scrum files."""
+class CollectionConfig:
+    """Configuration for any specific collection of cards"""
+
+    fields: dict[str, list[str]] = field(default_factory=dict)
+    """Fields with limited permitted values and defined order"""
+
+    required: list[str] = field(default_factory=list)
+    """Fields that are required to be in a card"""
+
+
+@dataclass
+class ScrumConfig(CollectionConfig):
+    """The configuration that applies to all cards and ScrumMD"""
 
     scrum_path: str = const.DEFAULT_SCRUM_FOLDER_NAME
     """Base path for the scrum folder"""
@@ -20,24 +31,8 @@ class ScrumConfig:
     omit_headers: bool = False
     """Omit headers from output"""
 
-    fields: dict[str, list[str]] = field(default_factory=dict)
-    """Fields with limited permitted values and defined order"""
-
     scard_reference_format: str = "[$index]"
     """Fields to show when a card is referenced in a field in `scard`"""
-
-    required: list[str] = field(default_factory=list)
-    """Fields that are required to be in a card"""
-
-    @dataclass
-    class CollectionConfig:
-        """Config for a specific collection only"""
-
-        required: list[str] = field(default_factory=list)
-        """Fields that are required to be in a card"""
-
-        fields: dict[str, list[str]] = field(default_factory=dict)
-        """Fields with limited permitted values and defined order"""
 
     collections: dict[str, CollectionConfig] = field(default_factory=dict)
 
@@ -45,4 +40,4 @@ class ScrumConfig:
         """Fix up 'CollectionConfig' which is erroneously a dict after initialising"""
 
         for key, collection in self.collections.items():
-            self.collections[key] = ScrumConfig.CollectionConfig(**collection)
+            self.collections[key] = CollectionConfig(**collection)
