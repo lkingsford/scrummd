@@ -38,5 +38,11 @@ testpaths = ["test"]
 strict = true
 scard_reference_format = "$index [$status]"
 
-[tool.scrummd.fields]
+[tool.scrummd.collections.backlog.fields]
 status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
+
+[tool.scrummd.collections.proposals]
+required = ["Status", "Use Case"]
+
+[tool.scrummd.collections.proposals.fields]
+status = ["Draft", "Proposed", "Accepted", "Rejected", "Complete"]
