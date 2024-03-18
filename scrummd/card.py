@@ -51,7 +51,7 @@ class Card:
             return FieldStr(self.index)
         if field_name == "summary":
             return FieldStr(self.summary)
-        if field_name == "_path":
+        if field_name == "path":
             return FieldStr(self.path)
 
         raise NotImplementedError("%f not yet available for output", [field_name])
@@ -128,7 +128,7 @@ def assert_valid_fields(config: ScrumConfig, fields: dict[str, Field]) -> None:
         raise InvalidFileError('"summary" must not be a list')
 
 
-NON_UDF_FIELDS = ["summary", "collections", "tags", "index"]
+NON_UDF_FIELDS = ["summary", "collections", "tags", "index", "path"]
 """Fields that are read into the Card itself rather than into the UDF"""
 
 
