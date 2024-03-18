@@ -90,7 +90,6 @@ class Card:
 
     def __post_init__(self):
         """Perform required validations"""
-        print(f"asserting valid for {self.index}")
         self.assert_valid_rules(self._config)
 
 
