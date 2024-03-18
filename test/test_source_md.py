@@ -37,7 +37,7 @@ def test_extract_property_from_full_file(md1_fo):
     """Test extracting property variables from an md file"""
     results = source_md.extract_fields(md1_fo.read())
     assert results["summary"] == "Summary of card"
-    assert results["status"] == "Status of card"
+    assert results["status"] == "Ready"
 
 
 def test_extract_header(md1_fo):

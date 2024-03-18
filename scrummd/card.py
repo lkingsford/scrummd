@@ -6,7 +6,7 @@ from scrummd.exceptions import (
     InvalidRestrictedFieldValueError,
     RequiredFieldNotPresentError,
 )
-from scrummd.config import ScrumConfig
+from scrummd.config import ScrumConfig, CollectionConfig
 from scrummd.source_md import FieldStr, extract_collection, extract_fields, Field
 
 
@@ -32,6 +32,9 @@ class Card:
     udf: dict[str, Field]
     """All additional fields in the file"""
 
+    _config: ScrumConfig
+    """Config card created with"""
+
     def get_field(self, field_name: str) -> Optional[Field]:
         """Get a field from either the card if present, or UDF if not
 
@@ -52,6 +55,43 @@ class Card:
             return FieldStr(self.path)
 
         raise NotImplementedError("%f not yet available for output", [field_name])
+
+    def assert_valid_rules(self, config: CollectionConfig) -> None:
+        """Raise an error if a card doesn't comply with an active configuration
+
+        Args:
+            config (ScrumConfig | CollectionConfig): Current Config
+                to check against
+
+        Returns:
+            None
+
+        Raises:
+            RequiredFieldNotPresentError: A field required by the collection's
+                `required` config wasn't present.
+            InvalidRestrictedFieldValueError: A field was not set to a valid
+                value per the collections `fields` config.
+        """
+
+        for key, value in self.udf.items():
+            if key in config.fields:
+                if isinstance(value, str) and value.lower() not in [
+                    f.lower() for f in config.fields[key]
+                ]:
+                    raise InvalidRestrictedFieldValueError(
+                        f'{key} is "{value}". Per configuration, {key} must be one of [{", ".join(config.fields[key])}]'
+                    )
+
+        for key in config.required:
+            if key.lower() not in self.udf.keys():
+                raise RequiredFieldNotPresentError(
+                    f"{key} is a required field per configuration."
+                )
+
+    def __post_init__(self):
+        """Perform required validations"""
+        print(f"asserting valid for {self.index}")
+        self.assert_valid_rules(self._config)
 
 
 def assert_valid_fields(config: ScrumConfig, fields: dict[str, Field]) -> None:
@@ -87,21 +127,6 @@ def assert_valid_fields(config: ScrumConfig, fields: dict[str, Field]) -> None:
 
     if isinstance(fields["summary"], list):
         raise InvalidFileError('"summary" must not be a list')
-
-    for key, value in fields.items():
-        if key in config.fields:
-            if isinstance(value, str) and value.lower() not in [
-                f.lower() for f in config.fields[key]
-            ]:
-                raise InvalidRestrictedFieldValueError(
-                    f'{key} is "{value}". Per configuration, {key} must be one of [{", ".join(config.fields[key])}]'
-                )
-
-    for key in config.required:
-        if key.lower() not in fields:
-            raise RequiredFieldNotPresentError(
-                f"{key} is a required field per configuration."
-            )
 
 
 NON_UDF_FIELDS = ["summary", "collections", "tags", "index"]
@@ -158,11 +183,14 @@ def from_str(
                 defined_collections[f"{index}.{key}"] = defined_collection
 
     assert isinstance(fields["summary"], str)
-    return Card(
+    new_card = Card(
         path=str(path),
         summary=fields["summary"],
         index=index,
         collections=collections,
         defined_collections=defined_collections,
         udf=udf,
+        _config=config,
     )
+
+    return new_card

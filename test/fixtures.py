@@ -8,8 +8,12 @@ from scrummd.config import ScrumConfig
 def data_config() -> ScrumConfig:
     """Data config with common parameters for tests"""
     return ScrumConfig(
+        strict=True,
         scrum_path="test/data",
         fields={"status": ["Ready", "Done"]},
+        collections={
+            "collection4": {"required": ["assignee"], "fields": {"status": ["ready"]}}
+        },
     )
 
 

@@ -11,11 +11,11 @@ def test_successful(data_config):
 
 def test_invalid(data_config):
     config = copy(data_config)
-    config.scrum_path = "test/data/fail_cases/invalid"
+    config.scrum_path = "test/fail_cases/invalid"
     assert get_exit_code(config) == ExitCode.INVALID_FILE
 
 
 def test_rule_violation(data_config):
     config = copy(data_config)
-    config.scrum_path = "test/data/fail_cases/rule_violation"
+    config.scrum_path = "test/fail_cases/rule_violation"
     assert get_exit_code(config) == ExitCode.RULE_VIOLATION
