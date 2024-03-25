@@ -1,11 +1,19 @@
+"""Tests for `collection.py`"""
+
 from copy import copy
 import os
 import pytest
+from pathlib import Path
 
 from scrummd.config import ScrumConfig
 from scrummd.collection import get_collection, group_collection
 from fixtures import data_config
 from scrummd.exceptions import RuleViolationError
+
+
+# NOTE: These almost all retrieve the same set of data. We might want to think
+# about ways we can restructure this to see more useful fail cases if something
+# was to go wrong.
 
 
 def test_get_basic_collection(data_config):
@@ -123,3 +131,12 @@ def test_collection_with_invalid_collection_rules(data_config):
     config.scrum_path = "test/fail_cases/collection_rule_violation"
     with pytest.raises(RuleViolationError):
         get_collection(config, "collection4")
+
+
+def test_path_correctly_set(data_config):
+    """Test that the path for a card is as expected"""
+    test_collection = get_collection(data_config, "collection1")
+    assert Path(test_collection["c1"].path) == Path("test/data/collection1/c1.md")
+    assert Path(test_collection["e1"].path) == Path(
+        "test/data/collection1/embedded/e1.md"
+    )
