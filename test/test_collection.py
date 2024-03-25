@@ -6,7 +6,12 @@ import pytest
 from pathlib import Path
 
 from scrummd.config import ScrumConfig
-from scrummd.collection import get_collection, group_collection
+from scrummd.collection import (
+    Filter,
+    get_collection,
+    group_collection,
+    filter_collection,
+)
 from fixtures import data_config
 from scrummd.exceptions import RuleViolationError
 
@@ -140,3 +145,27 @@ def test_path_correctly_set(data_config):
     assert Path(test_collection["e1"].path) == Path(
         "test/data/collection1/embedded/e1.md"
     )
+
+
+@pytest.mark.parametrize(
+    ["filters", "expected_card_ids"],
+    [
+        [[Filter("assignee", "Bob")], ["c1", "c3"]],
+        [[Filter("assignee", ["Bob", "Mary"])], ["c1", "c2", "c3"]],
+        [[Filter("assignee", "bob")], ["c1", "c3"]],
+        [[Filter("assignee", "bob"), Filter("status", "ready")], ["c1"]],
+        [[Filter("assignee", " bob"), Filter("status", "ready")], ["c1"]],
+    ],
+    ids=[
+        "1 field",
+        "1 field, 2 values",
+        "Check for case insensitivity",
+        "Multiple conditions",
+        "Strip whitespace",
+    ],
+)
+def test_filtering(data_config, filters, expected_card_ids):
+    """Test that filters are correctly applied"""
+    test_collection = get_collection(data_config)
+    result = filter_collection(test_collection, filters).keys()
+    assert set(result) == set(expected_card_ids)

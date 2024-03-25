@@ -2,7 +2,13 @@
 
 import argparse
 
-from scrummd.collection import Groups, get_collection, group_collection
+from scrummd.collection import (
+    Filter,
+    Groups,
+    get_collection,
+    group_collection,
+    filter_collection,
+)
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
@@ -10,6 +16,27 @@ from scrummd.scard import format_field
 from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
+
+
+def include_to_filter(source: str) -> Filter:
+    """Transform an --include argument into a Filter
+
+    Args:
+        source (str): FILTER from --include
+
+    Returns:
+        Filter: Filter object from the string
+    """
+    try:
+        field, value_str = source.split("=")
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "Filter not in valid format. Expected format is --include key=value1[, value2]"
+        )
+
+    values = [value.strip() for value in value_str.split(",")]
+
+    return Filter(field.strip(), values, Filter.FilterMode.EQUALS)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -47,7 +74,19 @@ def create_parser() -> argparse.ArgumentParser:
         "-g",
         "--group-by",
         action="append",
+        metavar="FIELD",
         help="Group by field in card. Can use multiple group-by arguments to have multiple levels of grouping.",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--include",
+        action="append",
+        metavar="FILTER",
+        type=include_to_filter,
+        help="Only include collections that match this filter. The filter is in the format "
+        + "`key=value1[, value2, ...]`. Multiple values verify if the field is any of the values. "
+        + "Multiple --include statements must all be matched.",
     )
 
     parser.add_argument(
@@ -85,6 +124,9 @@ def entry():
 
     if not omit_headers:
         print(", ".join(columns))
+
+    if args.include:
+        collection = filter_collection(collection, args.include)
 
     if not args.group_by:
         for card in collection.values():
