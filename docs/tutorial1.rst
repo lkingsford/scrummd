@@ -374,7 +374,7 @@ Now, if we go ``scard bug1``, we'll see:
 
 .. code-block:: text
 
-    $ card bug1
+    $ scard bug1
     ---
     bug1: Bug with project
     ---
@@ -385,6 +385,27 @@ Now, if we go ``scard bug1``, we'll see:
     card1 - My first Scrum card [Ready for Development]
 
 You'll see that the reference has been replaced with a more useful reference.
+
+Filters
+^^^^^^^
+
+Now you've got some bugs (sorry), you might want to see just the highest
+severity bugs. ``sbl`` has filters available with ``--include``.
+
+You can add multiple filters with multiple ``--include`` statements (all of
+which must be matched to show), and multiple values to ``include`` by separating
+them with a comma. If you were to go:
+
+.. code-block:: text
+
+    $ sbl --include severity=high
+    index, summary
+    bug3, Bad bug
+    bug1, Bug with project
+
+You can see that just high severity bugs are returned. Alternatively - you could
+go ``sbl --include severity=high,medium`` to show all medium and high bugs.
+
 
 Tags
 ^^^^

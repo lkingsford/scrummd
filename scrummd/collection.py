@@ -1,5 +1,8 @@
 from argparse import ArgumentError
 from collections import OrderedDict
+from copy import copy
+from dataclasses import dataclass
+from enum import Enum
 import itertools
 import os
 import pathlib
@@ -12,6 +15,46 @@ from scrummd.exceptions import ValidationError, DuplicateIndexError
 logger = logging.getLogger(__name__)
 
 Collection = dict[str, Card]
+
+
+@dataclass
+class Filter:
+    """Filter for filtering through a collection"""
+
+    class FilterMode(Enum):
+        """Types of filter"""
+
+        EQUALS = 1
+
+    field: str
+    """Field that is being tested"""
+
+    values: str | list[str]
+    """Potential values for the field"""
+
+    mode: FilterMode = FilterMode.EQUALS
+    """Mode that the filter is in"""
+
+    def apply(self, collection: Collection) -> Collection:
+        """Apply this filter to a collection
+
+        Args:
+            collection (Collection): Collection to apply the filter to
+
+        Returns:
+            Collection: The filtered collection
+        """
+        if isinstance(self.values, list):
+            values = [value.strip().lower() for value in self.values]
+        else:
+            values = [str(self.values).strip().lower()]
+
+        return {
+            card_index: card
+            for card_index, card in collection.items()
+            if not isinstance(card.get_field(self.field), list)
+            and str(card.get_field(self.field)).strip().lower() in values
+        }
 
 
 def get_collection(
@@ -205,3 +248,19 @@ def group_collection(
         )
         for key, group in card_groups.items()
     }
+
+
+def filter_collection(collection: Collection, filters: list[Filter]) -> Collection:
+    """Apply all filters to a collection
+
+    Args:
+        collection (Collection): Collection to apply filters to.
+        filters (list[Filter]): Filters to apply. All filters are applied.
+
+    Returns:
+        Collection: Filtered collection of cards.
+    """
+    working_collection = copy(collection)
+    for f in filters:
+        working_collection = f.apply(working_collection)
+    return working_collection
