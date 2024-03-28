@@ -1,6 +1,6 @@
 ## ScrumMD
 
-**A note before we start: I'm proud of how much is done, but if you've stumbled here before I've told folk about it, it's not _quite_ ready, and I'm not accepting contributions just yet. There's a couple more big changes I want to do before it's released. I will still gladly take feedback.**
+![Logo](docs/images/logo.png)
 
 **ScrumMD** started with a question: What if we could have a scrum board driven entirely by md files and the CLI, and use it with git?
 
@@ -15,6 +15,28 @@ vim `sbl -b sprint1`
 -   You can manage your cards with git...
 -   ... and can add them in the repository that they are for
 -   It's all text - so integrate with whatever you want
+
+The very basics are that you have a `scrum` folder, and you can put cards inside
+it. A card is very simple - it's just a markdown file with at least a summary
+field. For instance -
+
+```markdown
+---
+Summary: Make the thing
+---
+
+# Description
+
+Take the steps to make the thing
+
+# Dependencies
+
+-   [[thing02]]
+-   [[thing03]]
+```
+
+would be a completely valid card that can be explored with ScrumMD. But - per
+the documentation - it does a bunch more!
 
 ## Documentation
 

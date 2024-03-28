@@ -3,14 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: images/logo.png
+   :width: 50%
+   :align: center
+   :alt: ScrumMD Logo
+
 ScrumMD |version|
 ===================================
 
 Welcome to the documentation for ScrumMD.
 
-**ScrumMD** has tools for self-organising teams to manage cards written in md.
-As the name suggests, it was originally designed for teams to use in the Scrum
-process, but it can also be used for:
+**ScrumMD** has tools for self-organising teams to manage cards written in
+markdown.  As the name suggests, it was originally designed for teams to use in
+the Scrum process, but it can also be used for:
 
 - Kanban style processes
 - Tracking bugs and issues
