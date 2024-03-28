@@ -169,3 +169,12 @@ def test_filtering(data_config, filters, expected_card_ids):
     test_collection = get_collection(data_config)
     result = filter_collection(test_collection, filters).keys()
     assert set(result) == set(expected_card_ids)
+
+
+@pytest.mark.parametrize(
+    ["field", "expected_card_order"],
+    [["Estimate", ["c6", "c4", "c5"]]],
+    ids=["Sort by number field"],
+)
+def test_sorting(data_config, field, expected_card_order):
+    pass

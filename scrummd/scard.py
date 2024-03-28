@@ -8,7 +8,13 @@ from scrummd.card import Card
 from scrummd.collection import Collection, get_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
-from scrummd.source_md import CardComponent, Field, FieldStr, StringComponent
+from scrummd.source_md import (
+    CardComponent,
+    Field,
+    FieldNumber,
+    FieldStr,
+    StringComponent,
+)
 from scrummd.version import version_to_output
 
 logger = logging.getLogger(__name__)
@@ -17,18 +23,31 @@ _field_re = re.compile(r"\$(\w+)")
 
 
 def format_field(value: Optional[Field]) -> str:
+    """Format a given field for output
+
+    Args:
+        value (Optional[Field]): Field to output
+
+    Raises:
+        TypeError: Field is not a recognised formattable type
+
+    Returns:
+        str: Field suitable to use in output
+    """
     if value is None:
         return ""
-    if isinstance(value, str):
+    if isinstance(value, FieldStr):
         return value
     if isinstance(value, list):
         return f"[{', '.join(value)}]"
+    if isinstance(value, FieldNumber):
+        return f"{value:g}"
     else:
-        raise TypeError("Unsupported type %f", type(value))
+        raise TypeError(f"Unsupported type {type(value)}")
 
 
-def format_card(config: ScrumConfig, card: Card) -> str:
-    """Format a card per the config
+def format_card_summary(config: ScrumConfig, card: Card) -> str:
+    """Format the summary of a card per the config
 
     Args:
         config (ScrumConfig): Active scrum configuration
@@ -43,7 +62,7 @@ def format_card(config: ScrumConfig, card: Card) -> str:
     return output
 
 
-def output_value(config: ScrumConfig, value: FieldStr, collection: Collection) -> str:
+def output_fieldstr(config: ScrumConfig, value: Field, collection: Collection) -> str:
     """Generate the formatted output value for the field from the components
 
     Args:
@@ -58,22 +77,26 @@ def output_value(config: ScrumConfig, value: FieldStr, collection: Collection) -
     if not isinstance(value, FieldStr) and isinstance(value, str):
         # Likely index
         return value
+    import traceback
 
-    for component in value.components():
-        if isinstance(component, StringComponent):
-            output += component.value
-        elif isinstance(component, CardComponent):
-            card = collection.get(component.cardIndex)
-            if card:
-                output += format_card(config, card)
+    print(value)
+    traceback.print_stack()
+    if isinstance(value, FieldStr):
+        for component in value.components():
+            if isinstance(component, StringComponent):
+                output += component.value
+            elif isinstance(component, CardComponent):
+                card = collection.get(component.cardIndex)
+                if card:
+                    output += format_card_summary(config, card)
+                else:
+                    output += f"[[{component.cardIndex}]] (NOT FOUND)"
+                    logger.warning(
+                        f"Card index {component.cardIndex} not found when expanding"
+                    )
+                    # Should strict fail here?
             else:
-                output += f"[[{component.cardIndex}]] (NOT FOUND)"
-                logger.warning(
-                    f"Card index {component.cardIndex} not found when expanding"
-                )
-                # Should strict fail here?
-        else:
-            raise ValueError("Component of invalid type")
+                raise ValueError("Component of invalid type")
 
     return output
 
@@ -101,17 +124,17 @@ def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list
 
             if isinstance(v, list):
                 for item in v:
-                    formatted_value = output_value(config, item, collection)
+                    formatted_value = output_fieldstr(config, item, collection)
                     print(f"- {formatted_value}")
-            elif v.find("\n") > 0:
-                formatted_value = output_value(config, v, collection)
+            elif isinstance(v, FieldStr) and v.find("\n") > 0:
+                formatted_value = output_fieldstr(config, v, collection)
                 print(f"# {k}")
                 print(formatted_value)
                 print()
-
+            elif isinstance(v, FieldNumber):
+                formatted_value = f"{v:g}"
             else:
-                formatted_value = output_value(config, v, collection)
-                print(f"{k}: {formatted_value}")
+                raise ValueError(f"Unsupported type {type(v)}")
 
 
 def create_parser() -> argparse.ArgumentParser:

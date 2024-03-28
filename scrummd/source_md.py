@@ -65,7 +65,9 @@ class FieldStr(str):
         return self._components
 
 
-Field = Union[FieldStr, list[FieldStr]]
+FieldNumber = float
+
+Field = FieldStr | list[FieldStr] | FieldNumber
 """A field from the md file"""
 
 
@@ -116,6 +118,26 @@ def extract_collection(field_value: Field) -> list[str]:
     for value in field_list:
         results.extend(_extract_re.findall(value))
     return results
+
+
+def typed_field(field: str) -> Field:
+    """Return a Field of an appropriate type from the string
+
+    Currently supports strings and numbers - not lists.
+
+    Args:
+        field (str): Field value to interpret
+
+    Returns:
+        Field: A correctly typed field
+    """
+
+    try:
+        # I don't really like doing this as a non-exceptional exception, but it
+        # is at least clear
+        return FieldNumber(field)
+    except ValueError:
+        return FieldStr(field)
 
 
 def extract_fields(md_file: str) -> dict[str, Field]:
@@ -194,7 +216,7 @@ def extract_fields(md_file: str) -> dict[str, Field]:
                 list_field_key = key
                 fields[list_field_key] = []
             else:
-                fields[key] = FieldStr(value)
+                fields[key] = typed_field(value)
             continue
 
         if block_status == BlockStatus.IN_HEADER_LIST:
@@ -219,13 +241,13 @@ def extract_fields(md_file: str) -> dict[str, Field]:
             if stripped_line == "---":
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
                 if block_name is not None:
-                    fields[block_name] = FieldStr(block_value)
+                    fields[block_name] = typed_field(block_value)
                 block_value = ""
                 continue
             elif stripped_line[0] == "#":
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 if block_name is not None:
-                    fields[block_name] = FieldStr(block_value.strip())
+                    fields[block_name] = typed_field(block_value.strip())
                 block_name = get_block_name(stripped_line)
                 block_value = ""
                 continue

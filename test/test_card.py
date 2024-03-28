@@ -6,7 +6,9 @@ from scrummd.exceptions import (
     InvalidRestrictedFieldValueError,
     RequiredFieldNotPresentError,
 )
+
 import scrummd.card
+from scrummd.source_md import FieldNumber
 
 
 @pytest.fixture(scope="session")
@@ -52,7 +54,7 @@ required: present
 """
     config = copy(data_config)
     config.required = ["required"]
-    scrummd.card.from_str(config, valid_card, "collection", Path("collection/1md"))
+    scrummd.card.from_str(config, valid_card, "collection", Path("collection/1.md"))
     # Here means test passed
 
 
@@ -70,3 +72,31 @@ summary: valid
         scrummd.card.from_str(
             config, invalid_card, "collection", Path("collection/1md")
         )
+
+
+def test_integer_field(data_config):
+    """Test that a field with an integer value has a number type"""
+    card_str = """
+---
+summary: int card
+estimate: 5
+---
+"""
+    card = scrummd.card.from_str(
+        data_config, card_str, "collection", Path("collection/int.md")
+    )
+    assert card.udf["estimate"] == FieldNumber(5)
+
+
+def test_float_field(data_config):
+    """Test that a field with an integer value has a number type"""
+    card_str = """
+---
+summary: int card
+estimate: 4.2
+---
+"""
+    card = scrummd.card.from_str(
+        data_config, card_str, "collection", Path("collection/float.md")
+    )
+    assert card.udf["estimate"] == FieldNumber(4.2)
