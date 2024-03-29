@@ -8,9 +8,11 @@ from pathlib import Path
 from scrummd.config import ScrumConfig
 from scrummd.collection import (
     Filter,
+    SortCriteria,
     get_collection,
     group_collection,
     filter_collection,
+    sort_collection,
 )
 from fixtures import data_config
 from scrummd.exceptions import RuleViolationError
@@ -151,7 +153,7 @@ def test_path_correctly_set(data_config):
     ["filters", "expected_card_ids"],
     [
         [[Filter("assignee", "Bob")], ["c1", "c3"]],
-        [[Filter("assignee", ["Bob", "Mary"])], ["c1", "c2", "c3"]],
+        [[Filter("assignee", ["Bob", "Mary"])], ["c1", "c2", "c3", "c5", "c6"]],
         [[Filter("assignee", "bob")], ["c1", "c3"]],
         [[Filter("assignee", "bob"), Filter("status", "ready")], ["c1"]],
         [[Filter("assignee", " bob"), Filter("status", "ready")], ["c1"]],
@@ -178,3 +180,55 @@ def test_filtering(data_config, filters, expected_card_ids):
 )
 def test_sorting(data_config, field, expected_card_order):
     pass
+
+
+def test_group_sorting(data_config):
+    """Test that groups are in the order specified by sort"""
+    test_collection = get_collection(data_config, "collection1")
+    grouped_collection = group_collection(
+        data_config, test_collection, ["assignee"], [SortCriteria("assignee", False)]
+    )
+    assert list(grouped_collection.keys()) == [None, "aleph", "bob", "mary"]
+
+
+def test_group_reverse_sorting(data_config):
+    """Test that groups are in the order specified by sort when sort is reversed"""
+    test_collection = get_collection(data_config, "collection1")
+    grouped_collection = group_collection(
+        data_config, test_collection, ["assignee"], [SortCriteria("assignee", True)]
+    )
+    assert list(grouped_collection.keys()) == ["mary", "bob", "aleph", None]
+
+
+def test_sorting_collection_with_numbers(data_config):
+    """Test that an ungrouped collection of cards is sorted by criteria including numbers in the values"""
+    # SBL output for the collection:
+    # index, assignee, estimate
+    # c3, Bob,
+    # c2, Mary, 2.5
+    # c1, Bob, 5
+    # e1, Aleph, Unknown
+    test_collection = get_collection(data_config, "collection1")
+    sorted_collection = sort_collection(
+        test_collection, [SortCriteria("estimate", False)]
+    )
+    assert list(sorted_collection.keys()) == ["c3", "c2", "c1", "e1"]
+
+
+def test_sorting_collection_multiple_criteria(data_config):
+    """Test that sorting with multiple sort criteria. without grouping, applies
+    them correctly"""
+    test_collection = get_collection(data_config, "sort_collection")
+    sorted_collection = sort_collection(
+        test_collection,
+        [SortCriteria("assignee", False), SortCriteria("estimate", True)],
+    )
+    # SBL output for the collection:
+    # index, assignee, estimate
+    # c1, Bob, 5
+    # c2, Mary, 2.5
+    # c3, Bob,
+    # c4, Aleph, Unknown
+    # c5, Mary, 1
+    # c6, Mary, Unknown
+    assert list(sorted_collection.keys()) == ["c4", "c1", "c3", "c6", "c2", "c5"]

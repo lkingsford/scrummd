@@ -11,10 +11,13 @@ from scrummd.card import Card, from_str
 import logging
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import ValidationError, DuplicateIndexError
+from scrummd.source_md import Field, FieldNumber, FieldStr
 
 logger = logging.getLogger(__name__)
 
 Collection = dict[str, Card]
+SortedCollection = OrderedDict[str, Card]
+Groups = OrderedDict[Optional[Field], Union["Groups", SortedCollection]]
 
 
 @dataclass
@@ -55,6 +58,17 @@ class Filter:
             if not isinstance(card.get_field(self.field), list)
             and str(card.get_field(self.field)).strip().lower() in values
         }
+
+
+@dataclass
+class SortCriteria:
+    """Fields and order to sort by"""
+
+    key: str
+    """Field name to sort by"""
+
+    reversed: bool
+    """Reverse the order of the collection"""
 
 
 def get_collection(
@@ -176,22 +190,45 @@ def get_collection(
     return collections.get(collection_name) or {}
 
 
-Groups = dict[Optional[str], Union["Groups", list[Card]]]
+def _sort_key(field: Field) -> tuple[float, str]:
+    """
+    Sort by None, then Numerical order, then Strings
+
+    Args:
+        field (Field): Field to sort
+
+    Returns:
+        tuple[float, str]: A tuple suitable for sorting by
+
+    """
+    return (
+        (float("-inf"), "")
+        if field is None
+        else ((field, "") if isinstance(field, FieldNumber) else (float("inf"), field))
+    )
 
 
 def group_collection(
-    config: ScrumConfig, collection: Collection, groups: list[str]
+    config: ScrumConfig,
+    collection: Collection,
+    groups: list[str],
+    sort_criteria: list[SortCriteria] = [],
 ) -> Groups:
-    """Group collection into (potentially nested) groups by the field in the Card
+    """Group collection into (potentially nested) groups by the field in the Card, sorted if
+    required
 
     Args:
         config (ScrumConfig): Scrum config
         collection (Collection): Collection of cards to group
         groups (list[str]): All the groups that need to be made
+        sort_criteria (list[SortCriteria]): Criteria to sort the groups and cards by
 
     Returns:
         Groups: A dict with the group value, and either more groups or the field value
     """
+
+    # Why are we sorting here? It means we don't need to store the grouping fields to sort them
+    # later. This may change
 
     cur_group = groups[0].casefold()
     predefined = cur_group in [k.casefold() for k in config.fields.keys()]
@@ -217,7 +254,22 @@ def group_collection(
 
     card_groups[None] = []
 
-    # This could potentially be squished into the generating the fields so we don't have to pass through all of the cards multiple times
+    # This chunk here sorts the group headings themselves, if there is a sort
+    # for them
+    matching_sort = [
+        criteria for criteria in sort_criteria if criteria.key.casefold() == cur_group
+    ]
+    if matching_sort:
+        # sort by matching_sort[0]
+        sorted_card_groups_result = sorted(
+            card_groups.items(),
+            key=lambda k: _sort_key(k[0]),
+            reverse=matching_sort[0].reversed,
+        )
+        sorted_card_groups = OrderedDict(sorted_card_groups_result)
+    else:
+        sorted_card_groups = card_groups
+
     # But - this is clearer, and don't want to prematurely optimize
     for card in collection.values():
         card_field = card.get_field(cur_group)
@@ -234,12 +286,12 @@ def group_collection(
         else:
             field = None
 
-        output_collection = card_groups[field]
+        output_collection = sorted_card_groups[field]
         assert isinstance(output_collection, list)
         output_collection.append(card)
 
     if len(groups) == 1:
-        return card_groups
+        return sorted_card_groups
 
     # This is not particularly clear - if there's more groups to embed, recurse.
     return {
@@ -264,3 +316,44 @@ def filter_collection(collection: Collection, filters: list[Filter]) -> Collecti
     for f in filters:
         working_collection = f.apply(working_collection)
     return working_collection
+
+
+def sort_collection(
+    collection: Collection, criteria: list[SortCriteria]
+) -> SortedCollection:
+    """Sort a collection of cards by the sort criteria
+
+    Args:
+        collection (Collection): Collection to sort
+        criteria (list[SortCriteria]): Criteria to sort by
+
+    Returns:
+        SortedCollection: Sorted collection of cards
+    """
+
+    # Yet more recursion. We can't just use `sorted` with multiple tuples joined
+    # together because some criteria might be reversed
+    # Haven't checked the performance ramifications for this (particularly
+    # looping through) yet; there's some bigger 'O's than I'd prefer.
+
+    if len(criteria) == 0:
+        raise ArgumentError("criteria has no sort criteria")
+
+    sorted_by_criteria = sorted(
+        collection.items(),
+        key=lambda k: _sort_key(k[1].get_field(criteria[0].key)),
+        reverse=criteria[0].reversed,
+    )
+    if len(criteria) > 1:
+        output_dict: OrderedDict[str, Card] = OrderedDict()
+        grouped = itertools.groupby(
+            sorted_by_criteria, key=lambda k: _sort_key(k[1].get_field(criteria[0].key))
+        )
+        for _, group in grouped:
+            subcollection = OrderedDict(group)
+            sorted_subcollection = sort_collection(subcollection, criteria[1:])
+            for index, card in sorted_subcollection.items():
+                output_dict[index] = card
+        return output_dict
+    else:
+        return OrderedDict(sorted_by_criteria)
