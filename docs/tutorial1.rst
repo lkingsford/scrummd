@@ -406,6 +406,32 @@ them with a comma. If you were to go:
 You can see that just high severity bugs are returned. Alternatively - you could
 go ``sbl --include severity=high,medium`` to show all medium and high bugs.
 
+Sorting
+^^^^^^^
+
+Sorting can be a helpful thing to do.  If instead of filtering our bugs, we
+wanted to sort them priority, we can use ``--sort-by`` statements.
+
+.. code-block:: text
+
+    $ sbl --sort-by severity --columns "index, summary, severity"
+    index, summary, severity
+    card1, My first Scrum card,
+    bug3, Bad bug, High
+    bug1, Bug with project, High
+    bug2, Bug with project 2, Low
+
+Multiple ``--sort-by`` statements can be combined, and you can use ``^`` to
+reverse the order.
+
+.. code-block:: text
+
+    $ sbl --sort-by ^severity --columns "index, summary, severity"
+    index, summary, severity
+    bug2, Bug with project 2, Low
+    bug3, Bad bug, High
+    bug1, Bug with project, High
+    card1, My first Scrum card,
 
 Tags
 ^^^^
