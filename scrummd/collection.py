@@ -333,11 +333,12 @@ def sort_collection(
 
     # Yet more recursion. We can't just use `sorted` with multiple tuples joined
     # together because some criteria might be reversed
-    # Haven't checked the performance ramifications for this (particularly
-    # looping through) yet; there's some bigger 'O's than I'd prefer.
+    # The 'O's with the loop are bigger than I'd prefer, but practically, I'm
+    # seeing ~0.04-0.05s with `sbench` sorting 10000 cards by 2 criteria - so
+    # not _really_ wanting to prematurely optimize it yet.
 
     if len(criteria) == 0:
-        raise ArgumentError("criteria has no sort criteria")
+        return OrderedDict(collection)
 
     sorted_by_criteria = sorted(
         collection.items(),
