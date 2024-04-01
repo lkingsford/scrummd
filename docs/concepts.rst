@@ -76,3 +76,29 @@ the ``epics`` folder would be in both the ``backlog`` and ``backlog.epics``
 collections.
 
 A card may be in multiple collections.
+
+Collection sorting
+^^^^^^^^^^^^^^^^^^
+
+``sbl`` provides ``sort-by`` as an argument to allow you to sort cards, but - if
+you define a collection with the cards referenced in a card, they'll maintain
+the same order. 
+
+Given Scrum treats the order of cards in the Backlog and Sprint as important,
+you might choose to have your cards in a ``stories`` or ``features`` folder,
+and then intentionally create a backlog - for instance:
+
+``backlog.md``
+
+.. code-block:: markdown
+
+    ---
+    Summary: Backlog
+    ---
+
+    # Items
+
+    - [[card1]]
+    - [[card5]]
+    - [[card12]]
+    - [[card2]]

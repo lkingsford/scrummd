@@ -73,7 +73,7 @@ class SortCriteria:
 
 def get_collection(
     config: ScrumConfig, collection_name: Optional[str] = None
-) -> Collection:
+) -> SortedCollection:
     """Get a collection of cards
 
     Args:

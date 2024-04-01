@@ -149,6 +149,13 @@ def test_path_correctly_set(data_config):
     )
 
 
+def test_get_collection_maintains_listed_order(data_config):
+    """Test that where a collection is formed from references in a file, that
+    the order of the cards is maintained when that collection is 'got'"""
+    test_collection = get_collection(data_config, "sort_collection")
+    assert list(test_collection.keys()) == ["c6", "c2", "c3", "c4", "c5", "c1"]
+
+
 @pytest.mark.parametrize(
     ["filters", "expected_card_ids"],
     [
