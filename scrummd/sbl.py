@@ -5,9 +5,11 @@ import argparse
 from scrummd.collection import (
     Filter,
     Groups,
+    SortCriteria,
     get_collection,
     group_collection,
     filter_collection,
+    sort_collection,
 )
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
@@ -37,6 +39,24 @@ def include_to_filter(source: str) -> Filter:
     values = [value.strip() for value in value_str.split(",")]
 
     return Filter(field.strip(), values, Filter.FilterMode.EQUALS)
+
+
+def field_to_sort_criteria(argument: str) -> SortCriteria:
+    """Transform a --sort-by argument into a sort criteria
+
+    Args:
+        argument (str): the FIELD to sort by from --sort-by
+
+    Returns:
+        SortCriteria: A criteria to sort by
+    """
+
+    stripped = argument.strip()
+    if len(stripped) == 0 or stripped[1] == "^" and len(stripped) == 1:
+        raise argparse.ArgumentTypeError("Sort criteria not in valid format")
+    if stripped[0] == "^":
+        return SortCriteria(stripped[1:], True)
+    return SortCriteria(stripped, False)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -90,6 +110,16 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "-s",
+        "--sort-by",
+        action="append",
+        metavar="FIELD",
+        type=field_to_sort_criteria,
+        help="Sort by a field in card. Can use multiple sort-by arguments to have multiple levels "
+        + "of grouping. Can prefix field with ^ to reverse the sort.",
+    )
+
+    parser.add_argument(
         "--version",
         action="version",
         version=version_to_output(),
@@ -129,12 +159,15 @@ def entry():
         collection = filter_collection(collection, args.include)
 
     if not args.group_by:
-        for card in collection.values():
+        sorted_collection = sort_collection(collection, args.sort_by or [])
+        for card in sorted_collection.values():
             values = [format_field(card.get_field(col)) for col in columns]
             print(", ".join(values))
 
     else:
-        grouped = group_collection(config, collection, args.group_by)
+        grouped = group_collection(
+            config, collection, args.group_by, args.sort_by or []
+        )
 
         def output_group(
             config: ScrumConfig, collection: Groups, group_fields: list[str], level=1
