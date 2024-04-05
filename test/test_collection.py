@@ -105,25 +105,39 @@ def test_group_collection_defined_fields(data_config):
     """Test that grouping when a field is defined by config returns correct groups"""
     test_collection = get_collection(data_config, "collection1")
     grouped = group_collection(data_config, test_collection, ["status"])
-    assert set((card.index for card in grouped["ready"])) == set(["c1", "c2", "e1"])
-    assert set((card.index for card in grouped["done"])) == set(["c3"])
+    assert set((card.index for card in grouped["ready"].collection.values())) == set(
+        ["c1", "c2", "e1"]
+    )
+    assert set((card.index for card in grouped["done"].collection.values())) == set(
+        ["c3"]
+    )
 
 
 def test_group_collection_undefined_fields(data_config):
     """Test that grouping when a field is defined by config returns correct groups"""
     test_collection = get_collection(data_config, "collection1")
     grouped = group_collection(data_config, test_collection, ["assignee"])
-    assert set((card.index for card in grouped["bob"])) == set(["c1", "c3"])
-    assert set((card.index for card in grouped["mary"])) == set(["c2"])
+    assert set((card.index for card in grouped["bob"].collection.values())) == set(
+        ["c1", "c3"]
+    )
+    assert set((card.index for card in grouped["mary"].collection.values())) == set(
+        ["c2"]
+    )
 
 
 def test_multiple_groupbys(data_config):
     """Test that grouping when there are two fields is correct"""
     test_collection = get_collection(data_config, "collection1")
     grouped = group_collection(data_config, test_collection, ["status", "assignee"])
-    assert set((card.index for card in grouped["ready"]["bob"])) == set(["c1"])
-    assert set((card.index for card in grouped["ready"]["mary"])) == set(["c2"])
-    assert set((card.index for card in grouped["done"]["bob"])) == set(["c3"])
+    assert set(
+        (card.index for card in grouped["ready"].groups["bob"].collection.values())
+    ) == set(["c1"])
+    assert set(
+        (card.index for card in grouped["ready"].groups["mary"].collection.values())
+    ) == set(["c2"])
+    assert set(
+        (card.index for card in grouped["done"].groups["bob"].collection.values())
+    ) == set(["c3"])
 
 
 def test_collection_with_rules(data_config):
@@ -239,3 +253,16 @@ def test_sorting_collection_multiple_criteria(data_config):
     # c5, Mary, 1
     # c6, Mary, Unknown
     assert list(sorted_collection.keys()) == ["c4", "c1", "c3", "c6", "c2", "c5"]
+
+
+def test_sorting_inside_group(data_config):
+    """Test that the inner parts of groups are sorted correctly"""
+    test_collection = get_collection(data_config, "sort_collection")
+    grouped_sorted_collection = group_collection(
+        data_config, test_collection, ["Assignee"], [SortCriteria("estimate", False)]
+    )
+    assert list(grouped_sorted_collection["mary"].collection.keys()) == [
+        "c5",
+        "c2",
+        "c6",
+    ]
