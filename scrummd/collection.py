@@ -1,4 +1,3 @@
-from argparse import ArgumentError
 from collections import OrderedDict
 from copy import copy
 from dataclasses import dataclass
@@ -6,18 +5,28 @@ from enum import Enum
 import itertools
 import os
 import pathlib
-from typing import Optional, Union
+from typing import Optional
 from scrummd.card import Card, from_str
 import logging
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import ValidationError, DuplicateIndexError
-from scrummd.source_md import Field, FieldNumber, FieldStr
+from scrummd.source_md import Field, FieldNumber, FieldStr, typed_field
 
 logger = logging.getLogger(__name__)
 
-Collection = dict[str, Card]
-SortedCollection = OrderedDict[str, Card]
-Groups = OrderedDict[Optional[Field], Union["Groups", SortedCollection]]
+
+Collection = OrderedDict[str | Field, Card]
+
+
+# Weird use of tuple here - but we need to be able to distinguish whether it's
+# a "Groups" or "Collection"
+@dataclass
+class Group:
+    groups: "Groups"
+    collection: Collection
+
+
+Groups = OrderedDict[Optional[str | Field], Group]
 
 
 @dataclass
@@ -52,12 +61,14 @@ class Filter:
         else:
             values = [str(self.values).strip().lower()]
 
-        return {
-            card_index: card
-            for card_index, card in collection.items()
-            if not isinstance(card.get_field(self.field), list)
-            and str(card.get_field(self.field)).strip().lower() in values
-        }
+        return OrderedDict(
+            [
+                (card_index, card)
+                for card_index, card in collection.items()
+                if not isinstance(card.get_field(self.field), list)
+                and str(card.get_field(self.field)).strip().lower() in values
+            ]
+        )
 
 
 @dataclass
@@ -73,7 +84,7 @@ class SortCriteria:
 
 def get_collection(
     config: ScrumConfig, collection_name: Optional[str] = None
-) -> SortedCollection:
+) -> Collection:
     """Get a collection of cards
 
     Args:
@@ -87,7 +98,7 @@ def get_collection(
         dict[str, Card]: A dict with the index of the card, and a card object
     """
 
-    all_cards: dict[str, Card] = {}
+    all_cards = Collection()
 
     collection_path = pathlib.Path(config.scrum_path)
     for root, _, files in os.walk(collection_path, followlinks=True):
@@ -140,12 +151,13 @@ def get_collection(
                 if partial_name in collections:
                     collections[partial_name][index] = card
                 else:
-                    collections[partial_name] = {index: card}
+                    collections[partial_name] = Collection({index: card})
 
     # Get all the collections defined in a card in the fields. Again - needs to
     # add to parent collections too.
     # Holy horizontal ladder, Batman!
-    for index, card in all_cards.items():
+    for all_card_index, card in all_cards.items():
+        assert isinstance(all_card_index, str)
         for defined_name, defined_collection in card.defined_collections.items():
             for referenced_card_index in defined_collection:
                 if referenced_card_index not in all_cards:
@@ -157,24 +169,24 @@ def get_collection(
                         referenced_card_index
                     ]
                 else:
-                    collections[defined_name] = {
-                        referenced_card_index: all_cards[referenced_card_index]
-                    }
-                if index in collections:
-                    collections[index][referenced_card_index] = all_cards[
+                    collections[defined_name] = Collection(
+                        {referenced_card_index: all_cards[referenced_card_index]}
+                    )
+                if all_card_index in collections:
+                    collections[all_card_index][referenced_card_index] = all_cards[
                         referenced_card_index
                     ]
                 else:
-                    collections[index] = {
-                        referenced_card_index: all_cards[referenced_card_index]
-                    }
+                    collections[all_card_index] = Collection(
+                        {referenced_card_index: all_cards[referenced_card_index]}
+                    )
 
     # Validate that all cards in a collection are valid per its rules in config
     for _collection_name, collection in collections.items():
         collection_config = config.collections.get(_collection_name)
         if not collection_config:
             continue
-        for index, card in collection.items():
+        for _, card in collection.items():
             try:
                 card.assert_valid_rules(collection_config)
             except ValidationError as ex:
@@ -185,27 +197,32 @@ def get_collection(
                     logging.warn("ValidationError (%s) reading %s", ex, path)
 
     if not collection_name:
-        return all_cards
+        return Collection(all_cards)
 
-    return collections.get(collection_name) or {}
+    return collections.get(collection_name) or Collection({})
 
 
-def _sort_key(field: Field) -> tuple[float, str]:
+def _sort_key(field: Field | str | None) -> tuple[float, str]:
     """
     Sort by None, then Numerical order, then Strings
 
     Args:
         field (Field): Field to sort
 
+    Raises:
+        TypeError: There was a field that wasn't an expected type
+
     Returns:
         tuple[float, str]: A tuple suitable for sorting by
-
     """
-    return (
-        (float("-inf"), "")
-        if field is None
-        else ((field, "") if isinstance(field, FieldNumber) else (float("inf"), field))
-    )
+    if field is None:
+        return (float("-inf"), "")
+    elif isinstance(field, FieldNumber):
+        return (field, "")
+    elif isinstance(field, FieldStr) or isinstance(field, str):
+        return (float("inf"), field)
+    else:
+        raise TypeError("%s is not an available type", type(field))
 
 
 def group_collection(
@@ -232,7 +249,7 @@ def group_collection(
 
     cur_group = groups[0].casefold()
     predefined = cur_group in [k.casefold() for k in config.fields.keys()]
-    card_groups: Groups = OrderedDict()
+    card_groups: Groups = Groups()
 
     if predefined:
         group = next(
@@ -240,19 +257,21 @@ def group_collection(
             for key, fields in config.fields.items()
             if key.casefold() == cur_group
         )
-        for f in [f.casefold() for f in group]:
-            card_groups[f] = []
+        for predefined_field in [typed_field(f.casefold()) for f in group]:
+            card_groups[predefined_field] = Group(Groups(), Collection())
     else:
-        fields: set[str] = set()
+        fields: set[Optional[Field]] = set()
         for card in collection.values():
             card_field = card.get_field(cur_group)
             if isinstance(card_field, str):
-                fields.add(card_field.casefold())
-        ordered_fields = sorted(fields)
-        for f in ordered_fields:
-            card_groups[f] = []
+                fields.add(typed_field(card_field.casefold()))
+            else:
+                fields.add(card_field)
+        ordered_fields = sorted(fields, key=_sort_key)
+        for ordered_field in ordered_fields:
+            card_groups[ordered_field] = Group(Groups(), Collection())
 
-    card_groups[None] = []
+    card_groups[None] = Group(Groups(), Collection())
 
     # This chunk here sorts the group headings themselves, if there is a sort
     # for them
@@ -270,36 +289,55 @@ def group_collection(
     else:
         sorted_card_groups = card_groups
 
-    # But - this is clearer, and don't want to prematurely optimize
+    # The FieldStr/FieldNumber was supposed to make this more readable, but I
+    # really have more reflection here than I'd prefer
     for card in collection.values():
         card_field = card.get_field(cur_group)
         if card_field:
-            if not isinstance(card_field, str):
-                msg = f"{card.get_field('index')} can't group by {cur_group}: must be string."
+            if isinstance(card_field, FieldStr):
+                output_collection = sorted_card_groups[
+                    FieldStr(card_field.casefold())
+                ].collection
+            elif isinstance(card_field, FieldNumber):
+                output_collection = sorted_card_groups[card_field].collection
+            else:
+                msg = f"{card.get_field('index')} can't group by {cur_group}: must be string or number."
                 if config.strict:
                     raise ValidationError(msg)
                 else:
                     logger.warn(msg)
                     continue
-            else:
-                field = card_field.casefold()
         else:
-            field = None
+            output_collection = sorted_card_groups[None].collection
 
-        output_collection = sorted_card_groups[field]
-        assert isinstance(output_collection, list)
-        output_collection.append(card)
+        assert output_collection is not None
+        output_collection[card.index] = card
+
+    for group_key, group_value in sorted_card_groups.items():
+        sorted_output_collection = sort_collection(
+            group_value.collection, sort_criteria
+        )
+        sorted_card_groups[group_key].collection = sorted_output_collection
 
     if len(groups) == 1:
         return sorted_card_groups
 
     # This is not particularly clear - if there's more groups to embed, recurse.
-    return {
-        key: group_collection(
-            config, {c.index: c for c in group if isinstance(c, Card)}, groups[1:]
+    embedded_groups = [
+        (
+            key,
+            Group(
+                group_collection(
+                    config,
+                    Collection({c.index: c for c in group.collection.values()}),
+                    groups[1:],
+                ),
+                Collection(),
+            ),
         )
         for key, group in card_groups.items()
-    }
+    ]
+    return Groups(embedded_groups)
 
 
 def filter_collection(collection: Collection, filters: list[Filter]) -> Collection:
@@ -318,9 +356,7 @@ def filter_collection(collection: Collection, filters: list[Filter]) -> Collecti
     return working_collection
 
 
-def sort_collection(
-    collection: Collection, criteria: list[SortCriteria]
-) -> SortedCollection:
+def sort_collection(collection: Collection, criteria: list[SortCriteria]) -> Collection:
     """Sort a collection of cards by the sort criteria
 
     Args:
@@ -346,15 +382,15 @@ def sort_collection(
         reverse=criteria[0].reversed,
     )
     if len(criteria) > 1:
-        output_dict: OrderedDict[str, Card] = OrderedDict()
+        output_collection = Collection()
         grouped = itertools.groupby(
             sorted_by_criteria, key=lambda k: _sort_key(k[1].get_field(criteria[0].key))
         )
         for _, group in grouped:
-            subcollection = OrderedDict(group)
+            subcollection = Collection(group)
             sorted_subcollection = sort_collection(subcollection, criteria[1:])
             for index, card in sorted_subcollection.items():
-                output_dict[index] = card
-        return output_dict
+                output_collection[FieldStr(index)] = card
+        return output_collection
     else:
         return OrderedDict(sorted_by_criteria)

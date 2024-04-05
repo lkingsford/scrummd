@@ -108,15 +108,20 @@ def extract_collection(field_value: Field) -> list[str]:
     """Extract all of the card ids from a field (str or list of strings)
 
     Args:
-        field_value (Union[str, list[str]]): Field from the md file
+        field_value (Field): Field from the md file
 
     Returns:
         list[Index]: A list of all card indexes
     """
-    field_list = field_value if isinstance(field_value, list) else [field_value]
+    field_list: list[Field] = []
+    if isinstance(field_value, list):
+        field_list.extend(field_value)
+    else:
+        field_list.append(field_value)
+
     results = []
     for value in field_list:
-        results.extend(_extract_re.findall(value))
+        results.extend(_extract_re.findall(str(value)))
     return results
 
 
