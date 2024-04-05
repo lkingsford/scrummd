@@ -182,11 +182,11 @@ def entry():
                         + "]" * level
                     )
 
-                if isinstance(cards, dict):
-                    output_group(config, cards, group_fields[1:], level + 1)
+                if len(cards.groups) > 0:
+                    output_group(config, cards.groups, group_fields[1:], level + 1)
 
                 else:
-                    for card in cards:
+                    for card in cards.collection.values():
                         values = [format_field(card.get_field(col)) for col in columns]
                         print(", ".join(values))
 
