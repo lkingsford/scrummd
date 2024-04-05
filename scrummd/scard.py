@@ -77,10 +77,7 @@ def output_fieldstr(config: ScrumConfig, value: Field, collection: Collection) -
     if not isinstance(value, FieldStr) and isinstance(value, str):
         # Likely index
         return value
-    import traceback
 
-    print(value)
-    traceback.print_stack()
     if isinstance(value, FieldStr):
         for component in value.components():
             if isinstance(component, StringComponent):
@@ -126,13 +123,17 @@ def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list
                 for item in v:
                     formatted_value = output_fieldstr(config, item, collection)
                     print(f"- {formatted_value}")
-            elif isinstance(v, FieldStr) and v.find("\n") > 0:
+            elif isinstance(v, FieldStr):
                 formatted_value = output_fieldstr(config, v, collection)
-                print(f"# {k}")
-                print(formatted_value)
-                print()
+                if v.find("\n") > 0:
+                    print(f"# {k}")
+                    print(formatted_value)
+                    print()
+                else:
+                    print(f"{k}: {formatted_value}")
             elif isinstance(v, FieldNumber):
                 formatted_value = f"{v:g}"
+                print(f"{k}: {formatted_value}")
             else:
                 raise ValueError(f"Unsupported type {type(v)}")
 
