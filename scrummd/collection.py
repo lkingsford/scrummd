@@ -122,18 +122,18 @@ def get_collection(
                         raise DuplicateIndexError(card.index, path)
                     all_cards[card.index] = card
 
+            except DuplicateIndexError as ex:
+                if config.strict:
+                    raise
+                else:
+                    logging.warning("%s ignored", path)
+
             except ValidationError as ex:
                 if config.strict:
                     logging.error("ValidationError (%s) reading %s", ex, path)
                     raise
                 else:
                     logging.warning("ValidationError (%s) reading %s", ex, path)
-
-            except DuplicateIndexError as ex:
-                if config.strict:
-                    raise
-                else:
-                    logging.warning("%s ignored", path)
 
     collections: dict[str, Collection] = {}
 
