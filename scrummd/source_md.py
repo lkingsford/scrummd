@@ -207,7 +207,7 @@ def extract_fields(md_file: str) -> dict[str, Field]:
                 continue
             else:
                 list_field_key = ""
-                block_status == BlockStatus.IN_PROPERTY_BLOCK
+                block_status = BlockStatus.IN_PROPERTY_BLOCK
 
         if block_status == BlockStatus.IN_PROPERTY_BLOCK:
             if stripped_line == "---":
