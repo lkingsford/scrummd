@@ -33,6 +33,13 @@ def c5_md() -> str:
     fo.close()
 
 
+@pytest.fixture(scope="function")
+def c7_md() -> str:
+    fo = open("test/data/collection4/c7.md")
+    yield fo
+    fo.close()
+
+
 def test_extract_property_from_full_file(md1_fo):
     """Test extracting property variables from an md file"""
     results = source_md.extract_fields(md1_fo.read())
@@ -88,6 +95,13 @@ def test_extract_header_list(c5_md):
     """Tests that the list from a header is correctly extracted"""
     results = source_md.extract_fields(c5_md.read())
     assert sorted(results["tags"]) == ["special", "special2", "special3"]
+
+
+def test_extract_variety(c7_md):
+    """Tests that where there's a variety of fields, all are added"""
+    # Test exists because of bug noted in [[cli019]]
+    results = source_md.extract_fields(c7_md.read())
+    assert sorted(results.keys()) == ["assignee", "status", "summary", "test list"]
 
 
 def test_ignore_code_block(md2_fo):
