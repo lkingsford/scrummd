@@ -11,6 +11,7 @@ readme = "README.md"
 "scard" = "scrummd:scard_entry"
 "sbench" = "scrummd:sbench_entry"
 "svalid" = "scrummd:svalid_entry"
+"sboard" = "scrummd:sboard_entry"
 
 [build-system]
 requires = [
