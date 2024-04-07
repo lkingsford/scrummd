@@ -14,11 +14,25 @@ from scrummd.collection import (
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
+from scrummd.sbl import text_output
+from scrummd.sbl.output import (
+    OutputConfig,
+    SblOutputGroupedFunction,
+    SblOutputUngroupedFunction,
+)
 from scrummd.scard import format_field
 from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
 OUTPUT_FORMATS = ["text", "board"]
+
+UNGROUPED_OUTPUTTERS: dict[SblOutputUngroupedFunction] = {
+    "text": text_output.text_ungrouped_output
+}
+
+GROUPED_OUTPUTTERS: dict[SblOutputGroupedFunction] = {
+    "text": text_output.text_grouped_output
+}
 
 
 def include_to_filter(source: str) -> Filter:
@@ -157,17 +171,14 @@ def entry():
         columns = ["path"]
         omit_headers = True
 
-    if not omit_headers:
-        print(", ".join(columns))
-
     if args.include:
         collection = filter_collection(collection, args.include)
 
     if not args.group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
-        for card in sorted_collection.values():
-            values = [format_field(card.get_field(col)) for col in columns]
-            print(", ".join(values))
+        UNGROUPED_OUTPUTTERS[args.output](
+            config, OutputConfig(omit_headers, [], columns), sorted_collection
+        )
 
     else:
         grouped = group_collection(
