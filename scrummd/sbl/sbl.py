@@ -18,6 +18,7 @@ from scrummd.scard import format_field
 from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
+OUTPUT_FORMATS = ["text", "board"]
 
 
 def include_to_filter(source: str) -> Filter:
@@ -117,6 +118,10 @@ def create_parser() -> argparse.ArgumentParser:
         type=field_to_sort_criteria,
         help="Sort by a field in card. Can use multiple sort-by arguments to have multiple levels "
         + "of grouping. Can prefix field with ^ to reverse the sort.",
+    )
+
+    parser.add_argument(
+        "-o", "--output", default="text", choices=OUTPUT_FORMATS, help="Output format"
     )
 
     parser.add_argument(
