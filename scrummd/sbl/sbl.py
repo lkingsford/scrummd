@@ -14,7 +14,7 @@ from scrummd.collection import (
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
-from scrummd.sbl import text_output
+from scrummd.sbl import board_output, text_output
 from scrummd.sbl.output import (
     OutputConfig,
     SblOutputGroupedFunction,
@@ -27,11 +27,13 @@ VALIDATION_ERROR = 1
 OUTPUT_FORMATS = ["text", "board"]
 
 UNGROUPED_OUTPUTTERS: dict[str, SblOutputUngroupedFunction] = {
-    "text": text_output.text_ungrouped_output
+    "text": text_output.text_ungrouped_output,
+    "board": board_output.board_ungrouped_output,
 }
 
 GROUPED_OUTPUTTERS: dict[str, SblOutputGroupedFunction] = {
-    "text": text_output.text_grouped_output
+    "text": text_output.text_grouped_output,
+    "board": board_output.board_grouped_output,
 }
 
 
