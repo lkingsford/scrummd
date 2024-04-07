@@ -185,28 +185,9 @@ def entry():
             config, collection, args.group_by, args.sort_by or []
         )
 
-        def output_group(
-            config: ScrumConfig, collection: Groups, group_fields: list[str], level=1
-        ):
-            for group_key, cards in collection.items():
-                if not omit_headers:
-                    print(
-                        f"[" * level
-                        + group_fields[0]
-                        + " = "
-                        + str(group_key)
-                        + "]" * level
-                    )
-
-                if len(cards.groups) > 0:
-                    output_group(config, cards.groups, group_fields[1:], level + 1)
-
-                else:
-                    for card in cards.collection.values():
-                        values = [format_field(card.get_field(col)) for col in columns]
-                        print(", ".join(values))
-
-        output_group(config, grouped, args.group_by)
+        GROUPED_OUTPUTTERS[args.output](
+            config, OutputConfig(omit_headers, args.group_by, columns), None, grouped
+        )
 
 
 if __name__ == "__main__":
