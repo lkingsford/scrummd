@@ -14,10 +14,25 @@ from scrummd.collection import (
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
+from scrummd.sbl import text_output
+from scrummd.sbl.output import (
+    OutputConfig,
+    SblOutputGroupedFunction,
+    SblOutputUngroupedFunction,
+)
 from scrummd.scard import format_field
 from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
+OUTPUT_FORMATS = ["text", "board"]
+
+UNGROUPED_OUTPUTTERS: dict[str, SblOutputUngroupedFunction] = {
+    "text": text_output.text_ungrouped_output
+}
+
+GROUPED_OUTPUTTERS: dict[str, SblOutputGroupedFunction] = {
+    "text": text_output.text_grouped_output
+}
 
 
 def include_to_filter(source: str) -> Filter:
@@ -120,6 +135,10 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "-o", "--output", default="text", choices=OUTPUT_FORMATS, help="Output format"
+    )
+
+    parser.add_argument(
         "--version",
         action="version",
         version=version_to_output(),
@@ -152,45 +171,23 @@ def entry():
         columns = ["path"]
         omit_headers = True
 
-    if not omit_headers:
-        print(", ".join(columns))
-
     if args.include:
         collection = filter_collection(collection, args.include)
 
     if not args.group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
-        for card in sorted_collection.values():
-            values = [format_field(card.get_field(col)) for col in columns]
-            print(", ".join(values))
+        UNGROUPED_OUTPUTTERS[args.output](
+            config, OutputConfig(omit_headers, [], columns), None, sorted_collection
+        )
 
     else:
         grouped = group_collection(
             config, collection, args.group_by, args.sort_by or []
         )
 
-        def output_group(
-            config: ScrumConfig, collection: Groups, group_fields: list[str], level=1
-        ):
-            for group_key, cards in collection.items():
-                if not omit_headers:
-                    print(
-                        f"[" * level
-                        + group_fields[0]
-                        + " = "
-                        + str(group_key)
-                        + "]" * level
-                    )
-
-                if len(cards.groups) > 0:
-                    output_group(config, cards.groups, group_fields[1:], level + 1)
-
-                else:
-                    for card in cards.collection.values():
-                        values = [format_field(card.get_field(col)) for col in columns]
-                        print(", ".join(values))
-
-        output_group(config, grouped, args.group_by)
+        GROUPED_OUTPUTTERS[args.output](
+            config, OutputConfig(omit_headers, args.group_by, columns), None, grouped
+        )
 
 
 if __name__ == "__main__":
