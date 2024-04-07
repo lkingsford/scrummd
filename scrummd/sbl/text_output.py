@@ -19,7 +19,10 @@ def text_grouped_output(
 
 
 def text_ungrouped_output(
-    output_config: OutputConfig, text_config: None, collection: Collection
+    config: ScrumConfig,
+    output_config: OutputConfig,
+    text_config: None,
+    collection: Collection,
 ) -> None:
     """Output collection to stdout
 
@@ -31,8 +34,6 @@ def text_ungrouped_output(
     """
     if not output_config.omit_headers:
         print(", ".join(output_config.columns))
-        for card in collection.values():
-            values = [
-                format_field(card.get_field(col)) for col in output_config.columns
-            ]
-            print(", ".join(values))
+    for card in collection.values():
+        values = [format_field(card.get_field(col)) for col in output_config.columns]
+        print(", ".join(values))

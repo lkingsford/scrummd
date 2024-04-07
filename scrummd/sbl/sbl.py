@@ -26,11 +26,11 @@ from scrummd.version import version_to_output
 VALIDATION_ERROR = 1
 OUTPUT_FORMATS = ["text", "board"]
 
-UNGROUPED_OUTPUTTERS: dict[SblOutputUngroupedFunction] = {
+UNGROUPED_OUTPUTTERS: dict[str, SblOutputUngroupedFunction] = {
     "text": text_output.text_ungrouped_output
 }
 
-GROUPED_OUTPUTTERS: dict[SblOutputGroupedFunction] = {
+GROUPED_OUTPUTTERS: dict[str, SblOutputGroupedFunction] = {
     "text": text_output.text_grouped_output
 }
 
@@ -177,7 +177,7 @@ def entry():
     if not args.group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
         UNGROUPED_OUTPUTTERS[args.output](
-            config, OutputConfig(omit_headers, [], columns), sorted_collection
+            config, OutputConfig(omit_headers, [], columns), None, sorted_collection
         )
 
     else:
