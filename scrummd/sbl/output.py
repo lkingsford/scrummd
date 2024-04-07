@@ -3,6 +3,12 @@ from scrummd.collection import Groups, Collection, SortCriteria
 from scrummd.config import ScrumConfig
 
 
+class UnsupportedOutputError(ValueError):
+    """Called when output is unsupported for the current settings"""
+
+    pass
+
+
 class OutputConfig(NamedTuple):
     """Common run specific config for all types of output"""
 

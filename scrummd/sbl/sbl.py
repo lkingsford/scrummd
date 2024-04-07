@@ -14,7 +14,7 @@ from scrummd.collection import (
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
-from scrummd.sbl import text_output
+from scrummd.sbl import board_output, text_output
 from scrummd.sbl.output import (
     OutputConfig,
     SblOutputGroupedFunction,
@@ -27,11 +27,13 @@ VALIDATION_ERROR = 1
 OUTPUT_FORMATS = ["text", "board"]
 
 UNGROUPED_OUTPUTTERS: dict[str, SblOutputUngroupedFunction] = {
-    "text": text_output.text_ungrouped_output
+    "text": text_output.text_ungrouped_output,
+    "board": board_output.board_ungrouped_output,
 }
 
 GROUPED_OUTPUTTERS: dict[str, SblOutputGroupedFunction] = {
-    "text": text_output.text_grouped_output
+    "text": text_output.text_grouped_output,
+    "board": board_output.board_grouped_output,
 }
 
 
@@ -174,10 +176,17 @@ def entry():
     if args.include:
         collection = filter_collection(collection, args.include)
 
+    output_specific_config = None
+    if args.output == "board":
+        output_specific_config = board_output.BoardConfig()
+
     if not args.group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
         UNGROUPED_OUTPUTTERS[args.output](
-            config, OutputConfig(omit_headers, [], columns), None, sorted_collection
+            config,
+            OutputConfig(omit_headers, [], columns),
+            output_specific_config,
+            sorted_collection,
         )
 
     else:
@@ -186,7 +195,10 @@ def entry():
         )
 
         GROUPED_OUTPUTTERS[args.output](
-            config, OutputConfig(omit_headers, args.group_by, columns), None, grouped
+            config,
+            OutputConfig(omit_headers, args.group_by, columns),
+            output_specific_config,
+            grouped,
         )
 
 
