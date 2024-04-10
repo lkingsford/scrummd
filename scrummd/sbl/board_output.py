@@ -3,9 +3,11 @@ from scrummd.config import ScrumConfig
 from scrummd.sbl.output import OutputConfig, UnsupportedOutputError
 import os
 
+MIN_COLUMN_WIDTH = 15
+
 
 def _format_field(field: str, width: int) -> str:
-    stripped_field = field.strip().replace("/n", "")
+    stripped_field = field.strip().replace("\n", " ")
     if len(stripped_field) > width:
         return stripped_field[0 : width - 1] + "…"
     else:
@@ -13,21 +15,63 @@ def _format_field(field: str, width: int) -> str:
 
 
 def _output_last_level_groups(
-    config: ScrumConfig, output_config: OutputConfig, column_width: int, groups: Groups
+    config: ScrumConfig, output_config: OutputConfig, groups: Groups
 ):
     """Output the first level of groups that's actually split
 
     Args:
-        config (ScrumConfig): Scrum configuratoin
+        config (ScrumConfig): Scrum configuration
         output_config (OutputConfig): Output specific config
-        column_width (int): Width in characters of column
         groups (Groups): Final level of groups to display
     """
+    group_count = len(groups)
+    if group_count == 0:
+        return
+    terminal_width = os.get_terminal_size().columns
+    column_width = max((terminal_width) // group_count, MIN_COLUMN_WIDTH)
+    too_many = column_width * group_count > terminal_width
+    if too_many:
+        display_count = terminal_width // column_width
+        keys = list(groups.keys())[0:display_count]
+    else:
+        display_count = group_count
+        keys = list(groups.keys())
+
+    # Print headers
+    header_row = ""
+    for _, group_key in enumerate(keys):
+        if len(str(group_key)) > (column_width - 1):
+            header_value = str(group_key)[: column_width - 1] + "…"
+        else:
+            header_value = str(group_key) + " " * (
+                column_width - 1 - len(str(group_key))
+            )
+        header_row += "|" + header_value
+
+    if too_many:
+        header_row += ">"
+    else:
+        header_row += "|"
+    print(header_row)
+
+    border_row = ""
+    for _ in range(display_count):
+        border_row += "|" + "-" * (column_width - 1)
+
+    if too_many:
+        border_row += ">"
+    else:
+        border_row += "|"
+    print(border_row)
+
     text_width = column_width - 1
 
     # We build the strings for each column, and then display them line by line
-    output_columns: dict[str, list[str]] = {str(key): [] for key in groups.keys()}
+    output_columns: dict[str, list[str]] = {str(key): [] for key in keys}
     for group_key, group_value in groups.items():
+        if group_key not in keys:
+            # Deal with too many columns for screen
+            continue
         output_list = output_columns[str(group_key)]
         for card in group_value.collection.values():
             for field_name in output_config.columns:
@@ -36,13 +80,20 @@ def _output_last_level_groups(
                 )
             output_list.append(" " * text_width)
 
-    for line_no in range(len(groups)):
-        value_line = "|"
+    for line_no in range(
+        max([len(value_column) for value_column in output_columns.values()])
+    ):
+        value_line = ""
         for column in output_columns.values():
             if len(column) > line_no:
-                value_line += column[line_no] + "|"
+                value_line += "|" + column[line_no]
             else:
-                value_line += " " * (column_width - 1) + "|"
+                value_line += "|" + " " * (column_width - 1)
+
+        if too_many:
+            value_line += ">"
+        else:
+            value_line += "|"
         print(value_line)
 
 
@@ -51,33 +102,16 @@ def _output_group(
     output_config: OutputConfig,
     collection: Groups,
     group_fields: list[str],
-    column_width: int,
     level=1,
 ):
     """Internal recursive function to text_grouped_output"""
+    if len(group_fields) == 1:
+        _output_last_level_groups(config, output_config, collection)
+        return
     for group_key, cards in collection.items():
-        if len(group_fields) > 2:
-            if not output_config.omit_headers:
-                print(
-                    f"[" * level
-                    + group_fields[0]
-                    + " = "
-                    + str(group_key)
-                    + "]" * level
-                )
-            _output_group(
-                config, output_config, cards.groups, group_fields[1:], level + 1
-            )
-        else:
-            if not output_config.omit_headers:
-                print(
-                    f"[" * level
-                    + group_fields[0]
-                    + " = "
-                    + str(group_key)
-                    + "]" * level
-                )
-            _output_last_level_groups(config, output_config, column_width, cards.groups)
+        if not output_config.omit_headers:
+            print(f"[" * level + group_fields[0] + " = " + str(group_key) + "]" * level)
+        _output_group(config, output_config, cards.groups, group_fields[1:], level + 1)
 
 
 def board_grouped_output(
@@ -94,28 +128,9 @@ def board_grouped_output(
         text_config (None): Not used (yet)
         groups (Groups): Groups to output
     """
-    group_count = len(groups)
-    column_width = 10  # ; os.get_terminal_size().columns // group_count
 
-    # Print headers
-    header_row = "|"
-    for i, group_key in enumerate(groups.keys()):
-        if len(str(group_key)) > (column_width - 1):
-            header_value = str(group_key)[: column_width - 1] + "…"
-        else:
-            header_value = str(group_key) + " " * (
-                column_width - 1 - len(str(group_key))
-            )
-        header_row += header_value + "|"
-    print(header_row)
-
-    border_row = "|"
-    for i in range(len(groups.keys())):
-        border_row += "-" * (column_width - 1) + "|"
-    print(border_row)
-
-    _output_group(config, output_config, groups, output_config.group_by, column_width)
-    # _output_last_level_groups(config, output_config, column_width, groups)
+    _output_group(config, output_config, groups, output_config.group_by)
+    # _output_last_level_groups(config, output_config, groups)
 
 
 def board_ungrouped_output(
