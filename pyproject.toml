@@ -37,7 +37,9 @@ testpaths = ["test"]
 
 [tool.scrummd]
 strict = true
-scard_reference_format = "$index [$status]"
+
+[tool.scrummd.scard]
+reference_format = "$index [$status]"
 
 [tool.scrummd.fields]
 status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
