@@ -134,3 +134,23 @@ def test_collection_level_2(temp_dir, collection_config_f):
         "Started",
         "Done",
     ]
+
+
+SBL_CONFIG = """
+[tool.scrummd.sbl]
+columns = ["index"]
+"""
+
+
+@pytest.fixture(scope="function")
+def sbl_config_f(temp_dir):
+    with open(Path(temp_dir, "scrum.toml"), "w") as fo:
+        fo.write(SBL_CONFIG)
+        fo.flush()
+        yield
+
+
+def test_sbl_config(temp_dir, sbl_config_f):
+    """Test that the SBL config field is set from the file"""
+    config = load_fs_config()
+    assert config.sbl.columns == ["index"]

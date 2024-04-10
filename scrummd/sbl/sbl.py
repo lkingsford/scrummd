@@ -165,9 +165,9 @@ def entry():
     if args.columns:
         columns = [column.strip() for column in args.columns.split(",")]
     else:
-        columns = config.columns
+        columns = config.sbl.columns
 
-    omit_headers = args.omit_headers or config.omit_headers
+    omit_headers = args.omit_headers or config.sbl.omit_headers
 
     if args.bare:
         columns = ["path"]
@@ -180,7 +180,8 @@ def entry():
     if args.output == "board":
         output_specific_config = board_output.BoardConfig()
 
-    if not args.group_by:
+    group_by = args.group_by or config.sboard.default_group_by
+    if not group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
         UNGROUPED_OUTPUTTERS[args.output](
             config,
@@ -190,13 +191,11 @@ def entry():
         )
 
     else:
-        grouped = group_collection(
-            config, collection, args.group_by, args.sort_by or []
-        )
+        grouped = group_collection(config, collection, group_by, args.sort_by or [])
 
         GROUPED_OUTPUTTERS[args.output](
             config,
-            OutputConfig(omit_headers, args.group_by, columns),
+            OutputConfig(omit_headers, group_by, columns),
             output_specific_config,
             grouped,
         )
