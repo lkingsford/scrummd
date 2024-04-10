@@ -1,9 +1,23 @@
+from dataclasses import dataclass
+from typing import Optional
 from scrummd.collection import Groups, Collection
 from scrummd.config import ScrumConfig
 from scrummd.sbl.output import OutputConfig, UnsupportedOutputError
 import os
 
 MIN_COLUMN_WIDTH = 15
+
+
+@dataclass
+class BoardConfig:
+    default_column_width: int = 20
+    """Column width to use if unable to get the width of the terminal"""
+
+    minimum_column_width: int = 15
+    """Don't let a column be thinner than this """
+
+    override_column_width: Optional[int] = None
+    """Column width to force to use"""
 
 
 def _format_field(field: str, width: int) -> str:
@@ -15,21 +29,33 @@ def _format_field(field: str, width: int) -> str:
 
 
 def _output_last_level_groups(
-    config: ScrumConfig, output_config: OutputConfig, groups: Groups
+    config: ScrumConfig,
+    output_config: OutputConfig,
+    board_config: BoardConfig,
+    groups: Groups,
 ):
     """Output the first level of groups that's actually split
 
     Args:
         config (ScrumConfig): Scrum configuration
         output_config (OutputConfig): Output specific config
+        board_config (BoardConfig): Board specific configuration
         groups (Groups): Final level of groups to display
     """
     group_count = len(groups)
     if group_count == 0:
         return
-    terminal_width = os.get_terminal_size().columns
-    column_width = max((terminal_width) // group_count, MIN_COLUMN_WIDTH)
-    too_many = column_width * group_count > terminal_width
+    try:
+        terminal_width = os.get_terminal_size().columns
+        column_width = board_config.override_column_width or max(
+            (terminal_width) // group_count, board_config.minimum_column_width
+        )
+        too_many = column_width * group_count > terminal_width
+    except OSError:
+        # Can't get width of terminal
+        column_width = board_config.default_column_width
+        too_many = False
+
     if too_many:
         display_count = terminal_width // column_width
         keys = list(groups.keys())[0:display_count]
@@ -100,24 +126,42 @@ def _output_last_level_groups(
 def _output_group(
     config: ScrumConfig,
     output_config: OutputConfig,
+    board_config: BoardConfig,
     collection: Groups,
     group_fields: list[str],
     level=1,
 ):
-    """Internal recursive function to text_grouped_output"""
+    """Output groups to stdout in multiple levels in a scrum-board style
+        format
+
+    Args:
+        config (ScrumConfig): Active scrummd configuration
+        output_config (OutputConfig): Active output configuration
+        board_config (BoardConfig): Board specific configuration
+        collection (Groups): Collection to output to the screen
+        group_fields (list[str]): Fields that are being grouped by
+        level (int, optional): For internal use in recursion only. Defaults to 1.
+    """
     if len(group_fields) == 1:
-        _output_last_level_groups(config, output_config, collection)
+        _output_last_level_groups(config, output_config, board_config, collection)
         return
     for group_key, cards in collection.items():
         if not output_config.omit_headers:
             print(f"[" * level + group_fields[0] + " = " + str(group_key) + "]" * level)
-        _output_group(config, output_config, cards.groups, group_fields[1:], level + 1)
+        _output_group(
+            config,
+            output_config,
+            board_config,
+            cards.groups,
+            group_fields[1:],
+            level + 1,
+        )
 
 
 def board_grouped_output(
     config: ScrumConfig,
     output_config: OutputConfig,
-    board_config: None,
+    board_config: BoardConfig,
     groups: Groups,
 ) -> None:
     """Output a board to the console using the current display size
@@ -125,11 +169,11 @@ def board_grouped_output(
     Args:
         config (ScrumConfig): ScrumConfig
         output_config (OutputConfig): Output specific config
-        text_config (None): Not used (yet)
+        board_config (BoardConfig): Configuration related to the board output specifically
         groups (Groups): Groups to output
     """
 
-    _output_group(config, output_config, groups, output_config.group_by)
+    _output_group(config, output_config, board_config, groups, output_config.group_by)
     # _output_last_level_groups(config, output_config, groups)
 
 

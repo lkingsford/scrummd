@@ -176,10 +176,17 @@ def entry():
     if args.include:
         collection = filter_collection(collection, args.include)
 
+    output_specific_config = None
+    if args.output == "board":
+        output_specific_config = board_output.BoardConfig()
+
     if not args.group_by:
         sorted_collection = sort_collection(collection, args.sort_by or [])
         UNGROUPED_OUTPUTTERS[args.output](
-            config, OutputConfig(omit_headers, [], columns), None, sorted_collection
+            config,
+            OutputConfig(omit_headers, [], columns),
+            output_specific_config,
+            sorted_collection,
         )
 
     else:
@@ -188,7 +195,10 @@ def entry():
         )
 
         GROUPED_OUTPUTTERS[args.output](
-            config, OutputConfig(omit_headers, args.group_by, columns), None, grouped
+            config,
+            OutputConfig(omit_headers, args.group_by, columns),
+            output_specific_config,
+            grouped,
         )
 
 
