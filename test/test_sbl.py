@@ -1,6 +1,6 @@
 import pytest
 from scrummd.collection import Filter
-import scrummd.sbl
+import scrummd.sbl.sbl
 
 
 @pytest.mark.parametrize(
@@ -37,4 +37,4 @@ import scrummd.sbl
     ],
 )
 def test_include_to_filter(argument_value, expected_filter):
-    assert scrummd.sbl.include_to_filter(argument_value) == expected_filter
+    assert scrummd.sbl.sbl.include_to_filter(argument_value) == expected_filter
