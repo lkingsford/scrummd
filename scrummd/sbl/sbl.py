@@ -11,7 +11,6 @@ from scrummd.collection import (
     filter_collection,
     sort_collection,
 )
-from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
 from scrummd.sbl import board_output, text_output
@@ -20,7 +19,6 @@ from scrummd.sbl.output import (
     SblOutputGroupedFunction,
     SblOutputUngroupedFunction,
 )
-from scrummd.scard import format_field
 from scrummd.version import version_to_output
 
 VALIDATION_ERROR = 1
