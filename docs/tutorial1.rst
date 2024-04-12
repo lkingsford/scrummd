@@ -196,7 +196,7 @@ the output of the reporter with a ``-c`` command as follows:
 
 .. code-block:: text
 
-    sbl reports --group-by severity --columns index,summary,reporter
+    $ sbl reports --group-by severity --columns index,summary,reporter
     index, summary, reporter
     [severity = high]
     bug3, Bad bug, example2@example.com
@@ -205,6 +205,29 @@ the output of the reporter with a ``-c`` command as follows:
     bug2, Bug with project 2, example@example.com
     [severity = None]
 
+Board output
+^^^^^^^^^^^^
+
+Sometimes, it's helpful to get a more visual representation of the groups in a
+collection. By using ``--output board`` with ``sbl`` or ``sboard``, we can do
+this.
+
+For instance - with the example of the bugs above:
+
+.. code-block:: text
+
+    $ sboard reports --group-by severity
+    |high               |medium             |low                |None               |
+    |-------------------|-------------------|-------------------|-------------------|
+    |bug3               |                   |bug2               |                   |
+    |Bad bug            |                   |Bug with project 2 |                   |
+    |                   |                   |                   |                   |
+    |bug1               |                   |                   |                   |
+    |Bug with project   |                   |                   |                   |
+    |                   |                   |                   |                   |
+
+This can be helpful for showing reports like this, or for viewing the scrum
+board when grouping by status.
 
 ``bare`` mode
 ^^^^^^^^^^^^^
@@ -362,7 +385,9 @@ Next, we'll change the references in the config to suit our fields. Modify
 
     [tool.scrummd]
     strict = true
-    scard_reference_format = "$index [$status]"
+
+    [tool.scrummd.scard]
+    reference_format = "$index [$status]"
 
     [tool.scrummd.fields]
     severity = ["High", "Medium", "Low"]
@@ -518,6 +543,7 @@ Further - as all sub-collections are included in their parent collections,
 
 You can create an ``items`` field if you wish to add cards to the collection
 without creating a sub-collection.
+
 
 Conclusion
 ^^^^^^^^^^

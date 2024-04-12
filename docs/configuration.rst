@@ -51,47 +51,11 @@ Description
 
 Path to the Scrum repository containing cards and collections.
 
-``columns``
-^^^^^^^^^^^
-
-Type
-""""
-
-string
-
-Description
-"""""""""""
-
-Array of columns to show with ``sbl``.
-
-``omit_headers``
-^^^^^^^^^^^^^^^^
-
-Type
-""""
-
-bool
-
-Description
-"""""""""""
-
-Whether to omit headers from ``sbl`` output.
 
 
-``scard_reference_format``
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Type
-""""
-
-str
-
-Description
-"""""""""""
-
-Format of ``[[card]]`` fields when shown by ``scard``. Replaces ``$field`` with the field from the card.
 
 ``required``
+^^^^^^^^^^^^
 
 Type
 """"
@@ -133,6 +97,7 @@ Description
 
 List of fields that must be present in all cards in the collection.
 
+
 ``[tools.scrummd.collections.<collection name>.fields.<field name>]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -147,6 +112,82 @@ Description
 Limit *field name* to specific values for all cards in the collection. Each
 member is an array of str.
 
+``[tools.scrummd.sbl]``
+#######################
+
+``columns``
+^^^^^^^^^^^
+
+Type
+""""
+
+array of string
+
+Description
+"""""""""""
+
+Array of columns to show with ``sbl``.
+
+``omit_headers``
+^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+bool
+
+Description
+"""""""""""
+
+Whether to omit headers from ``sbl`` output.
+
+``default_group_by``
+^^^^^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+array of string
+
+Description
+"""""""""""
+
+Default fields to group by if there's no ``--group-by`` field. Defaults to none.
+
+``[tools.scrummd.sboard]``
+##########################
+
+``default_group_by``
+^^^^^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+array of string
+
+Description
+"""""""""""
+
+Default fields to group by if there's no ``--group-by`` field. 
+A ``--group-by`` argument or ``default_group_by`` configuration must be set
+for ``sboard`` to work.
+
+``[tools.scrummd.scard]``
+#########################
+
+``reference_format``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+str
+
+Description
+"""""""""""
+
+Format of ``[[card]]`` fields when shown by ``scard``. Replaces ``$field`` with the field from the card.
+
 Example configuration file
 ==========================
 
@@ -155,10 +196,19 @@ Example configuration file
     [tool.scrummd]
     strict = true
     scrum_path = "scrum"
-    columns = ["index", "status", "summary"]
-    scard_reference_format = "$index [$status] ($assignee)"
     omit_headers = false
     required = ["status"]
+
+    [tool.scrummd.sbl]
+    columns = ["index", "status", "summary"]
+    # default_group_by is unset but commented as example
+    # default_group_by = ["status"]
+
+    [tool.scrummd.sboard]
+    default_group_by = ["status"]
+    
+    [tool.scrummd.scard]
+    reference_format = "$index [$status] ($assignee)"
 
     [tool.scrummd.fields]
     status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]

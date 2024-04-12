@@ -38,6 +38,21 @@ Take the steps to make the thing
 would be a completely valid card that can be explored with ScrumMD. But - per
 the documentation - it does a bunch more!
 
+There's also some funky other tools like `sboard` that let you view a visual
+representation of the Scrum board in the console - for instance:
+
+```text
+$ sboard --group-by status
+|not fully defined  |ready              |in progress        |in testing         |done               |None               |
+|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|
+|cli008             |cli028             |cli034             |                   |cli018             |v0-1               |
+|Permit newlines in…|Allow underline he…|Show scrum board o…|                   |`sbl` Group By     |Items remaining to…|
+|                   |                   |                   |                   |                   |                   |
+|cli029             |cli032             |                   |                   |cli019             |                   |
+|Allow subheadings …|Write access to pr…|                   |                   |String property af…|                   |
+|                   |                   |                   |                   |                   |                   |
+```
+
 ## Documentation
 
 Find it all over on [Read The Docs](https://scrummd.readthedocs.io/). There's a fair bit of detail, and a tutorial for getting started.

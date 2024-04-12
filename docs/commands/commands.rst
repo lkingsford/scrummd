@@ -6,5 +6,6 @@ ScrumMD Commands
 
     sbl
     scard
+    sboard
     svalid
     sbench
