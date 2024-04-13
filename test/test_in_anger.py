@@ -15,12 +15,12 @@ def scrumcli_config() -> ScrumConfig:
 
 def test_get_backlog(scrumcli_config):
     """Gets the backlog from the scrummd project"""
-    backlog = get_collection(scrumcli_config, "backlog")
+    backlog = get_collection(scrumcli_config)
     assert len(backlog) > 0
 
 
 def test_scard(scrumcli_config):
     """Calls scard's output function for each card in the project"""
-    backlog = get_collection(scrumcli_config, "backlog")
+    backlog = get_collection(scrumcli_config)
     for index, _card in backlog.items():
         output_cards(scrumcli_config, backlog, index)

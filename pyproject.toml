@@ -45,4 +45,11 @@ default_group_by = ["status"]
 reference_format = "$index [$status]"
 
 [tool.scrummd.fields]
-status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]
+status = [
+    "Not Fully Defined",
+    "Ready",
+    "In Progress",
+    "In Testing",
+    "Done",
+    "Descoped",
+]
