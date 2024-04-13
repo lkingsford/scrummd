@@ -22,7 +22,7 @@ key 2: [[c2]][[c3]]
 
 def test_output_value(data_config, test_card, test_collection):
     config = copy(data_config)
-    config.scard_reference_format = "[$index $assignee $status]"
+    config.scard.reference_format = "[$index $assignee $status]"
     assert (
         output_fieldstr(config, test_card.get_field("key"), test_collection)
         == "Field [c1 Bob Ready]"
@@ -56,7 +56,7 @@ def sample_card(data_config):
 )
 def test_format_card(data_config, sample_card, input_format, expected):
     config = copy(data_config)
-    config.scard_reference_format = input_format
+    config.scard.reference_format = input_format
     assert format_card_summary(config, sample_card) == expected
 
 

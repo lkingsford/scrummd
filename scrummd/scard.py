@@ -56,7 +56,7 @@ def format_card_summary(config: ScrumConfig, card: Card) -> str:
     Returns:
         str: Card formatted per configuration
     """
-    format = config.scard_reference_format
+    format = config.scard.reference_format
 
     output = _field_re.sub(lambda m: format_field(card.get_field(m.group(1))), format)
     return output
