@@ -1,5 +1,11 @@
 ## ScrumMD
 
+---
+test: value
+test: value2
+test: value3
+---
+
 ![Logo](docs/images/logo.png)
 
 **ScrumMD** started with a question: What if we could have a scrum board driven entirely by md files and the CLI, and use it with git?
