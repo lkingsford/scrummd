@@ -156,7 +156,7 @@ def from_str(
     Returns:
         Card: The card for the md file
     """
-    fields: dict[str, Field] = extract_fields(input_card)
+    fields: dict[str, Field] = extract_fields(config, input_card)
     collections: list[str] = [collection]
     index = path.name.split(".")[0]
     udf: dict[str, Field] = {k: v for k, v in fields.items() if k not in NON_UDF_FIELDS}

@@ -4,6 +4,7 @@ import re
 from enum import Enum
 from typing import Optional, Any, Union
 
+from scrummd.config import ScrumConfig
 from scrummd.exceptions import InvalidFileError
 
 
@@ -145,7 +146,7 @@ def typed_field(field: str) -> Field:
         return FieldStr(field)
 
 
-def extract_fields(md_file: str) -> dict[str, Field]:
+def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
     """Extract all fields from the md_file
 
     There are two types of fields:
