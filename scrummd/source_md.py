@@ -198,6 +198,20 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
                 block_value = ""
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 continue
+            elif len(stripped_line) >= 4 and (
+                stripped_line[0:4] == "====" or stripped_line[0:4] == "----"
+            ):
+                # Currently, ==== and ---- are conflated, but they may become
+                # first and second level headers respectively
+                block_value_lines = block_value.splitlines()
+                if len(block_value_lines) > 1:
+                    block_name = (block_value_lines[-1]).strip().casefold()
+                    block_value = ""
+                    block_status = BlockStatus.IN_HEADER_BLOCK
+                    continue
+            else:
+                block_value += line
+                continue
 
         if block_status == BlockStatus.IN_PROPERTY_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
@@ -250,6 +264,20 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
                     fields[block_name] = typed_field(block_value)
                 block_value = ""
                 continue
+            elif len(stripped_line) >= 4 and (
+                stripped_line[0:4] == "====" or stripped_line[0:4] == "----"
+            ):
+                # Currently, ==== and ---- are conflated, but they may become
+                # first and second level headers respectively
+                block_value_lines = block_value.splitlines()
+                if block_name is not None:
+                    if len(block_value_lines) > 1:
+                        fields[block_name] = typed_field(
+                            "\n".join(block_value_lines[0:-1]).strip()
+                        )
+                if len(block_value_lines) > 1:
+                    block_name = (block_value_lines[-1]).strip().casefold()
+                block_value = ""
             elif stripped_line[0] == "#":
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 if block_name is not None:
@@ -270,6 +298,6 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
 
     if block_status == BlockStatus.IN_HEADER_BLOCK:
         if block_name is not None:
-            fields[block_name] = FieldStr(block_value)
+            fields[block_name] = FieldStr(block_value.strip())
 
     return fields
