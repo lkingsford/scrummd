@@ -65,6 +65,8 @@ class ScrumConfig(CollectionConfig):
 
     sboard: SboardConfig = field(default_factory=SboardConfig)
 
+    allow_header_summary: bool = False
+
     def __post_init__(self):
         """Fix up embedded fields, which default to dicts"""
 

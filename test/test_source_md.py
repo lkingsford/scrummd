@@ -1,6 +1,8 @@
+from copy import copy
 import os
 import pytest
 import scrummd.source_md as source_md
+from fixtures import data_config
 
 # Should these be one fixture?
 
@@ -15,6 +17,13 @@ def md1_fo() -> str:
 @pytest.fixture(scope="function")
 def md2_fo() -> str:
     fo = open("test/data/md2.md")
+    yield fo
+    fo.close()
+
+
+@pytest.fixture(scope="function")
+def md3_fo() -> str:
+    fo = open("test/data/md3.md")
     yield fo
     fo.close()
 
@@ -40,16 +49,16 @@ def c7_md() -> str:
     fo.close()
 
 
-def test_extract_property_from_full_file(md1_fo):
+def test_extract_property_from_full_file(data_config, md1_fo):
     """Test extracting property variables from an md file"""
-    results = source_md.extract_fields(md1_fo.read())
+    results = source_md.extract_fields(data_config, md1_fo.read())
     assert results["summary"] == "Summary of card"
     assert results["status"] == "Ready"
 
 
-def test_extract_header(md1_fo):
+def test_extract_header(data_config, md1_fo):
     """Test extracting header style variables from an md file"""
-    results = source_md.extract_fields(md1_fo.read())
+    results = source_md.extract_fields(data_config, md1_fo.read())
     assert (
         results["description"].strip()
         == """Multi line description
@@ -67,7 +76,7 @@ here"""
         ["###Header No Space", "header no space"],
     ],
 )
-def test_get_block_name(expected, result):
+def test_get_block_name(data_config, expected, result):
     """Verify that get_block_name returns the string part of # headers"""
     assert source_md.get_block_name(expected) == result
 
@@ -80,33 +89,54 @@ def test_get_block_name(expected, result):
         [" key: value ", ("key", "value")],
     ],
 )
-def test_extract_property(input, expected):
+def test_extract_property(data_config, input, expected):
     """Verify that the property is extracted with expected key and value"""
     assert source_md.split_property(input) == expected
 
 
-def test_extract_property_list(c4_md):
+def test_extract_property_list(data_config, c4_md):
     """Tests that the list from a property is correctly extracted"""
-    results = source_md.extract_fields(c4_md.read())
+    results = source_md.extract_fields(data_config, c4_md.read())
     assert sorted(results["tags"]) == ["special", "special2"]
 
 
-def test_extract_header_list(c5_md):
+def test_extract_header_list(data_config, c5_md):
     """Tests that the list from a header is correctly extracted"""
-    results = source_md.extract_fields(c5_md.read())
+    results = source_md.extract_fields(data_config, c5_md.read())
     assert sorted(results["tags"]) == ["special", "special2", "special3"]
 
 
-def test_extract_variety(c7_md):
+def test_extract_variety(data_config, c7_md):
     """Tests that where there's a variety of fields, all are added"""
     # Test exists because of bug noted in [[cli019]]
-    results = source_md.extract_fields(c7_md.read())
+    results = source_md.extract_fields(data_config, c7_md.read())
     assert sorted(results.keys()) == ["assignee", "status", "summary", "test list"]
 
 
-def test_ignore_code_block(md2_fo):
+def test_underline_header_summary(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results["summary"] == "This is the summary without it being in a property"
+
+
+@pytest.mark.parametrize(
+    ["input", "expected"],
+    [
+        ["double equals", source_md.FieldStr("Test")],
+        ["list", [source_md.FieldStr("Item 1"), source_md.FieldStr("Item 2")]],
+        ["entry after list", source_md.FieldStr("Multi\nLine\nField")],
+    ],
+)
+def test_underline_header_values(data_config, md3_fo, input, expected):
+    config = copy(data_config)
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results[input] == expected
+
+
+def test_ignore_code_block(data_config, md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
-    results = source_md.extract_fields(md2_fo.read())
+    results = source_md.extract_fields(data_config, md2_fo.read())
     # This would be 'Test Card 4' if it read inside the code block
     assert results["summary"] == "Test Card With Code"
     # This wouldn't be there if the block wasn't there as a string
