@@ -149,7 +149,7 @@ def test_collection_with_rules(data_config):
 def test_collection_with_invalid_collection_rules(data_config):
     """Test that a card violating collection rules raises an error"""
     config = copy(data_config)
-    config.scrum_path = "test/fail_cases/collection_rule_violation"
+    config.scrum_path = "test/special_cases/collection_rule_violation"
     with pytest.raises(RuleViolationError):
         get_collection(config, "collection4")
 
