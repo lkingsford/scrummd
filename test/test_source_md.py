@@ -23,7 +23,7 @@ def md2_fo() -> str:
 
 @pytest.fixture(scope="function")
 def md3_fo() -> str:
-    fo = open("test/data/md3.md")
+    fo = open("test/special_cases/header_summary/md3.md")
     yield fo
     fo.close()
 
