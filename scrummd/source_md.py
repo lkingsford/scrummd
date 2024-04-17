@@ -300,4 +300,22 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
         if block_name is not None:
             fields[block_name] = FieldStr(block_value.strip())
 
+    if config.allow_header_summary and "summary" not in fields:
+        possible_headers: list[str] = [
+            key
+            for key, value in fields.items()
+            if value == None or (isinstance(value, FieldStr) and len(value) == 0)
+        ]
+        if len(possible_headers) == 1:
+            header_key = possible_headers[0]
+            # Need to get the actual casing of the summary -
+            # the summary has been CaseFold. By doing a second pass
+            # we can reduce the complexity of holding the data in
+            # the algorithm proper
+            for line in md_file.splitlines():
+                if line.casefold().strip() == header_key:
+                    fields["summary"] = FieldStr(line.strip())
+        else:
+            raise InvalidFileError("No clear summary field")
+
     return fields

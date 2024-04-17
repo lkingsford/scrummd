@@ -1,5 +1,4 @@
 ---
-Summary: Temp
 Note: Constructed summary block
 ---
 
