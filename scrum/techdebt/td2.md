@@ -1,6 +1,6 @@
 ---
 Summary: Remove duplicates in github actions
-Status: Not yet ready
+Status: Not Fully Defined
 ---
 
 # Description
