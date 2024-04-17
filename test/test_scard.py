@@ -14,6 +14,7 @@ def test_card(data_config) -> Card:
 summary: Test Card
 key: Field [[c1]]
 key 2: [[c2]][[c3]]
+key 3: [[!c2]][[c3]]
 ---
 """
     card = from_str(data_config, test_card, "collection", Path("collection/card.md"))
@@ -29,6 +30,11 @@ def test_output_value(data_config, test_card, test_collection):
     )
     assert (
         output_fieldstr(config, test_card.get_field("key 2"), test_collection)
+        == "[c2 Mary ready][c3 Bob Done]"
+    )
+    # Todo: Split this into 3 paramatized tests
+    assert (
+        output_fieldstr(config, test_card.get_field("key 3"), test_collection)
         == "[c2 Mary ready][c3 Bob Done]"
     )
 

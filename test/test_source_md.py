@@ -152,6 +152,8 @@ def test_ignore_code_block(data_config, md2_fo):
         ["[[card1]] [[card2]]", ["card1", "card2"]],
         ["123 [[card1]] [[card2]]", ["card1", "card2"]],
         [["[[card1]]", "[[card2]][[card3]]"], ["card1", "card2", "card3"]],
+        ["123 [[!card1]] [[card2]]", ["card2"]],
+        [["[[card1]]", "[[card2]] [[!card3]]"], ["card1", "card2"]],
     ],
 )
 def test_extract_collection(input, expected):
