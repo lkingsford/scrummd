@@ -24,6 +24,8 @@ Supported fields
 ``[tool.scrummd]``
 ##################
 
+.. _allow_header_summary:
+
 ``allow_header_summary``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

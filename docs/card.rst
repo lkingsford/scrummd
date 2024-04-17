@@ -87,6 +87,47 @@ You'll note:
 - That Summary and Status are 'Property' style fields
 - The the remainder of the fields are 'Paragraph' style fields and spread over multiple lines, divided by headers.
 
+Alternative Heading Style
+=========================
+
+Headings can also be done in the 'underline' style with a line that starts with
+``----`` or ``====`` underneath the header. So - an alternative formatting to
+:ref:`cli017` above would be:
+
+
+``cli017-alternative.md``
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: markdown
+
+    ---
+    Status: Done
+    ---
+
+    `sbl` relative file path output only
+    ====================================
+
+    Tags
+    ----
+
+    - Feature
+    - Required for v1
+
+    Description
+    -----------
+
+    We want to be able to just list the paths of all the cards that `sbl` returns when `sbl -b` or `sbl --bare` is called. The idea is that you'll be able to call
+    (etc)
+
+
+This example also makes use of the :ref:`allow_header_summary` configuration
+(which defaults to off). The option permits setting the ``summary`` for the card
+by creating an empty block with the summary as a heading.
+
+The underlining and hash styles can be combined - for instance, to use a summary
+with underline headers, and fields starting with ``#`` symbols.
+
+
 Fields
 ======
 
