@@ -24,6 +24,28 @@ Supported fields
 ``[tool.scrummd]``
 ##################
 
+``allow_header_summary``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Type
+""""
+
+bool
+
+Description
+"""""""""""
+
+Permit summaries to be set by an empty summary. For instance:
+
+.. code-block:: markdown
+
+   This is a valid summary
+   =======================
+
+   # Description
+
+   Description goes here
+
 ``strict``
 ^^^^^^^^^^
 
@@ -196,11 +218,12 @@ Example configuration file
     [tool.scrummd]
     strict = true
     scrum_path = "scrum"
-    omit_headers = false
+    allow_header_summary = false
     required = ["status"]
 
     [tool.scrummd.sbl]
     columns = ["index", "status", "summary"]
+    omit_headers = false
     # default_group_by is unset but commented as example
     # default_group_by = ["status"]
 
