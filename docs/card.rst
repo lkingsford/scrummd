@@ -127,6 +127,41 @@ by creating an empty block with the summary as a heading.
 The underlining and hash styles can be combined - for instance, to use a summary
 with underline headers, and fields starting with ``#`` symbols.
 
+Card References
+===============
+
+Collecting Reference
+--------------------
+
+A collection reference is where you add the index of a card as so to a field:
+``[[card_index]]``. You can see an example in :ref:`cli017`. A collecting
+reference gets added to the collection of the card. So - in ``cli017`` above, a 
+``cli017.depends`` collection is created.
+
+You can use this collection - for instance, in ``sbl`` as follows:
+
+.. code-block:: text
+
+    $ sbl cli017.depends
+    index, summary
+    cli004, Customize columns in sbl by multiple views in config and meta
+
+You can also add them under an ``items`` heading to be attached to the card
+itself.
+
+Finally - ``scard`` can be configured to show fields of a referenced card - for
+instance, the status:
+
+Non collecting reference
+------------------------
+
+Sometimes, you may want to refer to a card in the text so ``scard`` can format
+the reference, but not want to add it to the collection or subcollection created
+by the card.
+
+You can do this with a reference in the form ``[[!card_index]]``.
+
+Any reference with an equals before the card index is not collected.
 
 Fields
 ======
@@ -154,6 +189,12 @@ the name of the card.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A list of collections to add the card to.
+
+.. _items:
+``items``
+^^^^^^^^^
+
+Add items listed to the collection of the card itself.
 
 Paragraph Field Type
 --------------------
