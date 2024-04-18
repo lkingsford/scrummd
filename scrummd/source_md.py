@@ -28,8 +28,11 @@ class StringComponent(FieldComponent):
     value: str
 
 
-_extract_re = re.compile(r"\[\[([^\]\n]*)\]\]")
-"""Regex expression used to extract the [[cardindexes]] out of a field"""
+_extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")
+"""Regex expression used to extract the [[cardindexes]] out of a field for a collection, ignoring [[!]] cards"""
+
+_extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
+"""Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
 
 class FieldStr(str):
@@ -54,7 +57,7 @@ class FieldStr(str):
 
         self._components = []
         cursor = 0
-        for match in _extract_re.finditer(self):
+        for match in _extract_card_component_re.finditer(self):
             if match.start() != cursor:
                 self._components.append(StringComponent(self[cursor : match.start()]))
 
@@ -122,7 +125,7 @@ def extract_collection(field_value: Field) -> list[str]:
 
     results = []
     for value in field_list:
-        results.extend(_extract_re.findall(str(value)))
+        results.extend(_extract_collection_re.findall(str(value)))
     return results
 
 
