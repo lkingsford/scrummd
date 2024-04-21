@@ -14,7 +14,9 @@ So - I did what anybody struck by a niggling thought like that would do. I
 wanted to see what such a tool might look like, so I started writing ScrumMD.
 
 Hi - I'm Lachlan Kingsford, the author of ScrumMD. I'm a scrum.org certified
-scrum-master, but I spend most of my day creating software.
+scrum-master, but I spend most of my day creating software. It is worth noting
+that in regards to ScrumMD, I'm on a 'frolic of my own' - and neither this video
+nor tool represent the work or opinions of my employer.
 
 The Scrum guide says that a Scrum team is supposed to be 'self-managing'. Since
 I spend so much time writing code, there are some ramifications:
