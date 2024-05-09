@@ -48,6 +48,21 @@ Permit summaries to be set by an empty summary. For instance:
 
    Description goes here
 
+``cache_file``
+^^^^^^^^^^^^^^
+
+Type
+""""
+
+string
+
+
+Description
+"""""""""""
+
+Path of sqlite file to store cache of cards. Defaults to ``.scrumcache``.
+
+
 ``strict``
 ^^^^^^^^^^
 

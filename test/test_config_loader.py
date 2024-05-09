@@ -23,6 +23,7 @@ name = "scrummd"
 [tool.scrummd]
 strict = true
 scrum_path = "with_config"
+cache_file = ".cache"
 """
 
 
@@ -88,6 +89,12 @@ def test_with_config_pyproject(temp_dir, pyproject_with_config):
     """Test that the tool works when pyproject is laid out as normal"""
     config = load_fs_config()
     assert config.scrum_path == "with_config"
+
+
+def test_cache_file(temp_dir, pyproject_with_config):
+    """Test that the cache_file is set"""
+    config = load_fs_config()
+    assert config.cache_file == ".cache"
 
 
 def test_fields_table(temp_dir, scrum_dot_toml):

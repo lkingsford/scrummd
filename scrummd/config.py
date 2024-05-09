@@ -59,6 +59,8 @@ class ScrumConfig(CollectionConfig):
     collections: dict[str, CollectionConfig] = field(default_factory=dict)
     """Embedded collection config"""
 
+    cache_file: str = const.DEFAULT_SCRUM_CACHE_FILE
+
     scard: ScardConfig = field(default_factory=ScardConfig)
 
     sbl: SblConfig = field(default_factory=SblConfig)
