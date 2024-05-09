@@ -20,4 +20,4 @@ def data_config() -> ScrumConfig:
 @pytest.fixture(scope="session")
 def test_collection(data_config) -> collection.Collection:
     """Full collection of cards from test"""
-    return collection.get_collection(data_config)
+    return collection.get_collection_from_fs(data_config)

@@ -8,7 +8,7 @@ import argparse
 from enum import Enum
 import sys
 
-from scrummd.collection import get_collection
+from scrummd.collection import get_collection_from_fs
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import InvalidFileError, RuleViolationError
@@ -32,7 +32,7 @@ def get_exit_code(config: ScrumConfig) -> ExitCode:
     config.strict = True
 
     try:
-        get_collection(config)
+        get_collection_from_fs(config)
     except InvalidFileError:
         return ExitCode.INVALID_FILE
     except RuleViolationError:

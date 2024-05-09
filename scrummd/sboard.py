@@ -2,7 +2,11 @@
 
 import sys
 import argparse
-from scrummd.collection import filter_collection, get_collection, group_collection
+from scrummd.collection import (
+    filter_collection,
+    get_collection_from_fs,
+    group_collection,
+)
 from scrummd.config_loader import load_fs_config
 from scrummd.exceptions import ValidationError
 import scrummd.sbl.board_output
@@ -88,7 +92,7 @@ def entry():
     config = load_fs_config()
 
     try:
-        collection = get_collection(config, args.collection)
+        collection = get_collection_from_fs(config, args.collection)
     except ValidationError:
         if config.strict:
             return VALIDATION_ERROR

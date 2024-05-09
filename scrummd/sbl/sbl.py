@@ -6,7 +6,7 @@ from scrummd.collection import (
     Filter,
     Groups,
     SortCriteria,
-    get_collection,
+    get_collection_from_fs,
     group_collection,
     filter_collection,
     sort_collection,
@@ -155,7 +155,7 @@ def entry():
     config = load_fs_config()
 
     try:
-        collection = get_collection(config, args.collection)
+        collection = get_collection_from_fs(config, args.collection)
     except ValidationError:
         if config.strict:
             return VALIDATION_ERROR

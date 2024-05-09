@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Optional
 from scrummd.card import Card
-from scrummd.collection import Collection, get_collection
+from scrummd.collection import Collection, get_collection_from_fs
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.source_md import (
@@ -161,7 +161,7 @@ def entry():
 
     config = load_fs_config()
 
-    collection = get_collection(config)
+    collection = get_collection_from_fs(config)
 
     output_cards(config, collection, args.card)
 

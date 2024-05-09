@@ -82,10 +82,10 @@ class SortCriteria:
     """Reverse the order of the collection"""
 
 
-def get_collection(
+def get_collection_from_fs(
     config: ScrumConfig, collection_name: Optional[str] = None
 ) -> Collection:
-    """Get a collection of cards
+    """Get a collection of cards from the filesystem
 
     Args:
         config (ScrumConfig): ScrumMD Configuration to use

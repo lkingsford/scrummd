@@ -9,7 +9,7 @@ import tempfile
 import contextlib
 from collections.abc import Iterator
 import random
-from scrummd.collection import SortCriteria, get_collection, sort_collection
+from scrummd.collection import SortCriteria, get_collection_from_fs, sort_collection
 from scrummd.version import version_to_output
 from scrummd.config import ScrumConfig
 
@@ -125,14 +125,14 @@ def entry():
         times = []
         print(f"get_collection executions")
         for count in range(int(args.times)):
-            ex_time = timeit.timeit(lambda: get_collection(config), number=1)
+            ex_time = timeit.timeit(lambda: get_collection_from_fs(config), number=1)
             times.append(ex_time)
             print(f"{count}: {ex_time} s")
         print(f" Avg: {mean(times)} s")
 
         if args.sorts > 0:
             sort_times = []
-            collection = get_collection(config)
+            collection = get_collection_from_fs(config)
             print("\nsort_collection executions")
             criteria = [
                 SortCriteria(f"s{sort_number}", False)
