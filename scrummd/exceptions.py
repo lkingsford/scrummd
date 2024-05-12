@@ -41,3 +41,15 @@ class RequiredFieldNotPresentError(RuleViolationError):
     """Called when a field required by config isn't present"""
 
     pass
+
+
+class CacheError(RuntimeError):
+    """Triggered if there is an issue with the cache"""
+
+    pass
+
+
+class DbAlreadyExistsError(CacheError, FileExistsError):
+    """Triggered if the DB exists, but we're attempting to create it new."""
+
+    pass
