@@ -11,9 +11,11 @@ import scrummd.config
 
 @pytest.fixture(scope="function")
 def temp_scrum_directory():
+    working_dir = os.getcwd()
     with tempfile.TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
         yield tmpdir
-    print("out")
+    os.chdir(working_dir)
 
 
 @pytest.fixture(scope="function")
@@ -26,7 +28,6 @@ def scrum_cached_config(temp_scrum_directory):
 
 def test_new_with_existing_cache_file(temp_scrum_directory, scrum_cached_config):
     cache = Cache(scrum_cached_config)
-    cache._init_new_db()
     cache2 = Cache(scrum_cached_config)
     pytest.raises(
         scrummd.exceptions.DbAlreadyExistsError, lambda: cache2._init_new_db()
