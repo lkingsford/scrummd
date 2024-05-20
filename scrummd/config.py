@@ -1,8 +1,19 @@
 """The ScrumConfig class to configure processing scrum files."""
 
 from dataclasses import dataclass, field, fields
-from typing import Optional
+from typing import NamedTuple, Optional
+import os
 from scrummd import const
+
+
+class ConfigMetadata(NamedTuple):
+    """Data about the config file itself"""
+
+    modified_time: Optional[int]
+    """Time that the file was last modified"""
+
+    path: Optional[str]
+    """Path of the file itself"""
 
 
 @dataclass
@@ -60,6 +71,7 @@ class ScrumConfig(CollectionConfig):
     """Embedded collection config"""
 
     cache_file: str = const.DEFAULT_SCRUM_CACHE_FILE
+    """File to store sqlite3 cached cards in"""
 
     scard: ScardConfig = field(default_factory=ScardConfig)
 
@@ -68,6 +80,10 @@ class ScrumConfig(CollectionConfig):
     sboard: SboardConfig = field(default_factory=SboardConfig)
 
     allow_header_summary: bool = False
+
+    config_metadata: ConfigMetadata = ConfigMetadata(None, None)
+
+    """Details on the config file itself"""
 
     def __post_init__(self):
         """Fix up embedded fields, which default to dicts"""

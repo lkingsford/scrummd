@@ -3,7 +3,7 @@
 import sys
 import os
 from scrummd import const
-from scrummd.config import ScrumConfig
+from scrummd.config import ScrumConfig, ConfigMetadata
 
 # Need to do this because tomllib wasn't included until Python 3.11
 if sys.version_info >= (3, 11):
@@ -24,6 +24,8 @@ def load_fs_config() -> ScrumConfig:
             config_settings = LOAD(config_file)
             relevant_settings = config_settings.get("tool", {}).get("scrummd")
             if relevant_settings:
-                return ScrumConfig(**relevant_settings)
-
+                config = ScrumConfig(**relevant_settings)
+                modified = os.stat(filename).st_mtime_ns
+                config.config_metadata = ConfigMetadata(modified, filename)
+                return config
     return ScrumConfig()

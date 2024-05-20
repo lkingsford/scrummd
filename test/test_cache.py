@@ -1,3 +1,4 @@
+import sqlite3
 import pytest
 import tempfile
 from pathlib import Path
@@ -7,6 +8,7 @@ import time
 from scrummd.cache import Cache, ChangeType, ChangedFile
 import scrummd.exceptions
 import scrummd.config
+import scrummd.version
 
 
 @pytest.fixture(scope="function")
@@ -22,15 +24,8 @@ def temp_scrum_directory():
 def scrum_cached_config(temp_scrum_directory):
     print(temp_scrum_directory)
     yield scrummd.config.ScrumConfig(
-        cache_file=Path(temp_scrum_directory).joinpath(".cache.sqlite3")
-    )
-
-
-def test_new_with_existing_cache_file(temp_scrum_directory, scrum_cached_config):
-    cache = Cache(scrum_cached_config)
-    cache2 = Cache(scrum_cached_config)
-    pytest.raises(
-        scrummd.exceptions.DbAlreadyExistsError, lambda: cache2._init_new_db()
+        cache_file=Path(temp_scrum_directory).joinpath(".cache.sqlite3"),
+        config_metadata=scrummd.config.ConfigMetadata(1000, "config"),
     )
 
 
@@ -150,3 +145,82 @@ def test_get_file_changes_modified_files(
     changes = cache.get_file_changes()
 
     assert changes == {ChangedFile(ChangeType.MODIFIED, path) for path in changed_files}
+
+
+@pytest.fixture(scope="function")
+def restore_version():
+    old_version = scrummd.version.version
+    yield
+    scrummd.version.version = old_version
+
+
+def test_cache_invalidation_version(
+    temp_scrum_directory, scrum_cached_config, restore_version
+):
+    """Test that cache is invalidated when version changes"""
+
+    cache = Cache(scrum_cached_config)
+    cache.update_metadata()
+
+    scrummd.version.version = "new"
+
+    effective_path = scrum_cached_config.cache_file
+    db = sqlite3.connect(effective_path)
+    cache2 = Cache(scrum_cached_config)
+    assert cache2.cache_invalidated(db)
+
+
+def test_cache_invalidation_no_change(
+    temp_scrum_directory, scrum_cached_config, restore_version
+):
+    """Test that cache is not invalidated when version and config doesn't change"""
+
+    cache = Cache(scrum_cached_config)
+    cache.update_metadata()
+
+    effective_path = scrum_cached_config.cache_file
+    db = sqlite3.connect(effective_path)
+    cache2 = Cache(scrum_cached_config)
+    assert not cache2.cache_invalidated(db)
+
+
+def test_cache_invalidation_config_modified_time(
+    temp_scrum_directory, scrum_cached_config, restore_version
+):
+    """Test that cache is invalidated when config modified changes"""
+
+    cache = Cache(scrum_cached_config)
+    cache.update_metadata()
+
+    modified_config = scrummd.config.ScrumConfig(
+        cache_file=scrum_cached_config,
+        config_metadata=scrummd.config.ConfigMetadata(
+            999999, scrum_cached_config.config_metadata.path
+        ),
+    )
+
+    effective_path = scrum_cached_config.cache_file
+    db = sqlite3.connect(effective_path)
+    cache2 = Cache(modified_config)
+    assert cache2.cache_invalidated(db)
+
+
+def test_cache_invalidation_config_modified_path(
+    temp_scrum_directory, scrum_cached_config, restore_version
+):
+    """Test that cache is invalidated when config modified changes"""
+
+    cache = Cache(scrum_cached_config)
+    cache.update_metadata()
+
+    modified_config = scrummd.config.ScrumConfig(
+        cache_file=scrum_cached_config,
+        config_metadata=scrummd.config.ConfigMetadata(
+            scrum_cached_config.config_metadata.modified_time, "new path.config"
+        ),
+    )
+
+    effective_path = scrum_cached_config.cache_file
+    db = sqlite3.connect(effective_path)
+    cache2 = Cache(modified_config)
+    assert cache2.cache_invalidated(db)
