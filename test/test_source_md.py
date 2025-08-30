@@ -1,49 +1,51 @@
 from copy import copy
+from io import TextIOWrapper
 import os
 import pytest
 import scrummd.source_md as source_md
+from typing import Generator
 from fixtures import data_config
 
 # Should these be one fixture?
 
 
 @pytest.fixture(scope="function")
-def md1_fo() -> str:
+def md1_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/md1.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def md2_fo() -> str:
+def md2_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/md2.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def md3_fo() -> str:
+def md3_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/special_cases/header_summary/md3.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c4_md() -> str:
+def c4_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c4.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c5_md() -> str:
+def c5_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c5.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c7_md() -> str:
+def c7_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection4/c7.md")
     yield fo
     fo.close()

@@ -73,9 +73,9 @@ def test_format_card(data_config, sample_card, input_format, expected):
         [FieldNumber(123), "123"],
         [FieldNumber(123.0), "123"],
         [FieldNumber(123.1), "123.1"],
-        [["a", "b", "3"], "[a, b, 3]"],
+        [[FieldStr("a"), FieldStr("b"), FieldStr("3")], "[a, b, 3]"],
     ],
 )
-def test_format_field(input_data: Field | list[str], expected: str):
+def test_format_field(input_data: Field | list[FieldStr], expected: str):
     """Test that formatting a field produces the expected output"""
     assert format_field(input_data) == expected
