@@ -1,7 +1,7 @@
 import pytest
 from scrummd import collection
 
-from scrummd.config import ScrumConfig
+from scrummd.config import CollectionConfig, ScrumConfig
 
 
 @pytest.fixture(scope="session")
