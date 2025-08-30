@@ -46,6 +46,9 @@ class ScardConfig:
     """Fields to show when a card is referenced in a field in `scard`"""
 
 
+RawCollectionConfig = CollectionConfig | dict[str, list[str] | str]
+
+
 @dataclass
 class ScrumConfig(CollectionConfig):
     """The configuration that applies to all cards and ScrumMD"""
@@ -56,7 +59,7 @@ class ScrumConfig(CollectionConfig):
     strict: bool = False
     """Fail on any error with the scrum folder (such as duplicate index or invalid file)"""
 
-    collections: dict[str, CollectionConfig] = field(default_factory=dict)
+    collections: dict[str, RawCollectionConfig] = field(default_factory=dict)
     """Embedded collection config"""
 
     scard: ScardConfig = field(default_factory=ScardConfig)
@@ -71,7 +74,8 @@ class ScrumConfig(CollectionConfig):
         """Fix up embedded fields, which default to dicts"""
 
         for key, collection in self.collections.items():
-            self.collections[key] = CollectionConfig(**collection)
+            if isinstance(self.collections[key], dict):
+                self.collections[key] = CollectionConfig(**collection)
 
         if isinstance(self.sbl, dict):
             self.sbl = SblConfig(**self.sbl)
