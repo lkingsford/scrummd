@@ -12,7 +12,9 @@ def data_config() -> ScrumConfig:
         scrum_path="test/data",
         fields={"status": ["Ready", "Done"]},
         collections={
-            "collection4": {"required": ["assignee"], "fields": {"status": ["ready"]}}
+            "collection4": CollectionConfig(
+                required=["assignee"], fields={"status": ["ready"]}
+            )
         },
     )
 
