@@ -131,6 +131,19 @@ class ParsedMd:
         self._meta[key] = FieldMetadata(md_type)
         self._order.insert(index, key)
 
+    def remove_field(self, key: str) -> None:
+        """Remove a field from the field dictionary"""
+        del self._fields[key]
+        self._meta.pop(key)
+        self._order.remove(key)
+
+    def order(self) -> list[str]:
+        """Returns the order of the fields"""
+        return list(self._order)
+
+    def meta(self, key: str) -> FieldMetadata:
+        return self._meta[key]
+
 
 def get_block_name(md_line: str) -> str:
     """Get the name of the block from the header line"""
@@ -388,12 +401,15 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
             # the algorithm proper
             for line in md_file.splitlines():
                 if line.casefold().strip() == header_key:
+                    previous_position = parsed.order().index(header_key)
                     parsed.insert_field(
                         "summary",
                         FieldStr(line.strip()),
                         FIELD_MD_TYPE.IMPLICIT_SUMMARY,
-                        0,
+                        previous_position,
                     )
+                    parsed.remove_field(header_key)
+                    break
         else:
             raise InvalidFileError("No clear summary field")
 

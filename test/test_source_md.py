@@ -136,6 +136,37 @@ def test_underline_header_values(data_config, md3_fo, input, expected):
     assert results[input] == expected
 
 
+def test_property_meta(data_config, md1_fo):
+    results = source_md.extract_fields(data_config, md1_fo.read())
+    assert results.meta("summary").md_type == source_md.FIELD_MD_TYPE.PROPERTY
+
+
+def test_block_meta(data_config, md1_fo):
+    results = source_md.extract_fields(data_config, md1_fo.read())
+    assert results.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+
+
+def test_underline_header_summary_meta(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
+
+
+def test_underline_head_summary_order(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results.order() == [
+        "note",
+        "summary",
+        "double equals",
+        "list",
+        "entry after list",
+    ]
+
+
 def test_ignore_code_block(data_config, md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
     results = source_md.extract_fields(data_config, md2_fo.read())
