@@ -218,7 +218,7 @@ The field value extends until the next header. The header level is irrelevant -
 Property Field Type
 -------------------
 
-A set of property style fields is defined between pairs of `---`. Muliple
+A set of property style fields is defined between pairs of `---`. Multiple
 properties may be set at once. The properties should be set at the top of the
 file.
 
