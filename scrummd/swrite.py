@@ -20,7 +20,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="version",
         version=version_to_output(),
     )
-    parser.add_argument("card", help="Card to set property on")
+    parser.add_argument("cards", nargs="*", help="Cards to set property on")
     parser.add_argument(
         "property", nargs="*", help='Properties to set in the format "property=value"'
     )
