@@ -194,7 +194,7 @@ def get_collection(
                     logging.error("ValidationError (%s) reading %s", ex, path)
                     raise
                 else:
-                    logging.warn("ValidationError (%s) reading %s", ex, path)
+                    logging.warning("ValidationError (%s) reading %s", ex, path)
 
     if not collection_name:
         return Collection(all_cards)
