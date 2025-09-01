@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Optional, Any, Union
 
 from scrummd.config import ScrumConfig
-from scrummd.exceptions import InvalidFileError
+from scrummd.exceptions import InvalidFileError,ImplicitChangeOfTypeError
 
 
 class FIELD_MD_TYPE(Enum):
@@ -142,7 +142,38 @@ class ParsedMd:
         return list(self._order)
 
     def meta(self, key: str) -> FieldMetadata:
+        """Returns the metadata for a field"""
         return self._meta[key]
+
+    def apply_modifications(self, config: ScrumConfig, modifications: list[tuple[str, str]]) -> "ParsedMd":
+        """Applies the modifications (in MD format) to the field listed, returning a new ParsedMd"""
+        for key, value in modifications:
+            field = Field(value)
+            if key not in self._fields:
+                self._order.append(key)
+                self._meta[key] = FieldMetadata(FIELD_MD_TYPE.PROPERTY)
+            if self._meta[key].md_type == FIELD_MD_TYPE.PROPERTY and isinstance(field, FieldStr) and 
+        return self
+
+
+def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
+    """Returns the most sensible (or necessary) type for this field"""
+    if config.allow_header_summary and key == "summary":
+        return FIELD_MD_TYPE.IMPLICIT_SUMMARY
+    if not isinstance(field, list) and not (isinstance(field, FieldStr) and "\n" in field):
+        return FIELD_MD_TYPE.PROPERTY
+    
+    raise NotImplemented
+
+def _assert_valid_as_property(field_name: str, field : Field) -> None:
+    """Raise an exception if the field is currently a property, and its new value doesn't support it."""
+    # TODO: Add an 'overwrite type' option
+    if isinstance(field, list):
+        raise ImplicitChangeOfTypeError("Attempting to set property %s to a list.", field_name)
+
+    if isinstance(field, FieldStr) and field.contains("\n"):
+        raise ImplicitChangeOfTypeError("Attempting to set property %s to a multi-line string.", field_name)
+     
 
 
 def get_block_name(md_line: str) -> str:
