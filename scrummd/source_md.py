@@ -3,7 +3,8 @@ import re
 
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Optional
+from collections.abc import ItemsView, KeysView
 
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import (
@@ -19,7 +20,8 @@ class FIELD_MD_TYPE(Enum):
     IMPLICIT = 0
     PROPERTY = 1
     BLOCK = 2
-    IMPLICIT_SUMMARY = 3
+    LIST_PROPERTY = 3
+    IMPLICIT_SUMMARY = 4
 
 
 class FieldComponent:
@@ -135,7 +137,7 @@ class ParsedMd:
         """
         return key in self._fields
 
-    def items(self) -> list[tuple[str, Field]]:
+    def items(self) -> ItemsView[str, Field]:
         """
         Exposes the field dict items().
 
@@ -154,7 +156,7 @@ class ParsedMd:
         # TBD if this is fast enough or overkill
         return deepcopy(self)
 
-    def keys(self) -> list[str]:
+    def keys(self) -> KeysView[str]:
         """
         Exposes the field dict keys().
 
@@ -237,7 +239,6 @@ class ParsedMd:
         Returns:
             ParsedMd: A new ParsedMd with the modifications applied.
         """
-        """Applies the modifications (in MD format) to the field listed, returning a new ParsedMd"""
         new_md = self.copy()
         for key, new_value in modifications:
             if key == "index":
@@ -251,8 +252,9 @@ class ParsedMd:
             stripped = new_value.strip()
             if (
                 len(new_value) > 1
-                and new_value[0] == "-"
-                and not (len(new_value) > 3 and new_value[0:3] == "---")
+                and stripped.startswith("-")
+                and not (stripped.startswith("---"))
+                and all(v.strip().startswith("-") for v in new_value.split("\n"))
             ):
                 # Treating as list
                 field: Field = [FieldStr(v[1:].strip()) for v in stripped.split("\n")]
@@ -288,7 +290,7 @@ def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
     if config.allow_header_summary and key == "summary":
         return FIELD_MD_TYPE.IMPLICIT_SUMMARY
     if isinstance(field, list):
-        return FIELD_MD_TYPE.PROPERTY
+        return FIELD_MD_TYPE.LIST_PROPERTY
     if isinstance(field, FieldStr) and "\n" not in field:
         return FIELD_MD_TYPE.PROPERTY
     return FIELD_MD_TYPE.BLOCK
