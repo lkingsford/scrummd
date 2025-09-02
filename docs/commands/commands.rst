@@ -5,7 +5,8 @@ ScrumMD Commands
     :maxdepth: 1
 
     sbl
-    scard
-    sboard
-    svalid
     sbench
+    sboard
+    scard
+    svalid
+    swrite
