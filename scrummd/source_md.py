@@ -145,6 +145,8 @@ class ParsedMd:
         """Returns the metadata for a field"""
         return self._meta[key]
 
+    def apply_modifications(self, config: ScrumConfig, modifications: list[tuple[str, str]]) -> "ParsedMd":
+        raise NotImplementedError
 def get_block_name(md_line: str) -> str:
     """Get the name of the block from the header line"""
     results = re.match(r"\#+(.*)", md_line)
