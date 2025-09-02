@@ -321,7 +321,14 @@ def _assert_valid_as_property(field_name: str, field: Field) -> None:
 
 
 def get_block_name(md_line: str) -> str:
-    """Get the name of the block from the header line"""
+    """Get the name of the block from the header line
+
+    Args:
+        md_line (str): Line to remove any preceeding '#'s from
+
+    Returns
+        str: Text of header
+    """
     results = re.match(r"\#+(.*)", md_line)
     if results is not None:
         return results.group(1).casefold().strip()
@@ -330,7 +337,14 @@ def get_block_name(md_line: str) -> str:
 
 
 def split_property(md_line: str) -> tuple[str, str]:
-    """Split the property"""
+    """Split the property into its key and value
+
+    Args:
+        md_line (str): Line in the format of "key: value" to split
+
+    Returns:
+        tuple(str, str): Key and value
+    """
     results = re.match(r"\W*([^\:]+)\:(.*)", md_line)
     if results is not None:
         return (results.group(1).casefold().strip(), results.group(2).strip())
