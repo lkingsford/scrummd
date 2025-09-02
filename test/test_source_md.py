@@ -291,8 +291,8 @@ def test_modify_invalid_newline_in_list(data_config, c4_md):
     """Test that adding a newline in an entry of a list fails."""
     extracted = source_md.extract_fields(data_config, c4_md.read())
     with pytest.raises(ImplicitChangeOfTypeError):
-        modify = extracted.apply_modifications(
-            data_config, [{"tags", ["tag1", "tag2\nnew line"]}]
+        extracted.apply_modifications(
+            data_config, [("tags", ["tag1", "tag2\nnew line"])]
         )
 
 
