@@ -238,6 +238,26 @@ def test_modify_block_basic(data_config, md1_fo):
     assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
 
 
+def test_modify_block_with_code_block(data_config, md1_fo):
+    """Test modifying a block that includes a code block"""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    example_card_text = """Example card:
+```
+---
+Summary: Test Card 4
+Index: 5
+---
+# Description
+
+Stuff here
+```"""
+    modify = extracted.apply_modifications(
+        data_config, [("description", example_card_text)]
+    )
+    assert modify["description"] == example_card_text
+    assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+
+
 def test_modify_header_summary(data_config, md3_fo):
     """Test modifying a header summary"""
     extracted = source_md.extract_fields(data_config, md3_fo.read())
