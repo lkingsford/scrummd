@@ -1,11 +1,17 @@
 from dataclasses import dataclass
 import re
 
+from copy import deepcopy
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Optional
+from collections.abc import ItemsView, KeysView
 
 from scrummd.config import ScrumConfig
-from scrummd.exceptions import InvalidFileError,ImplicitChangeOfTypeError
+from scrummd.exceptions import (
+    InvalidFileError,
+    ImplicitChangeOfTypeError,
+    UnsupportedModificationError,
+)
 
 
 class FIELD_MD_TYPE(Enum):
@@ -14,7 +20,8 @@ class FIELD_MD_TYPE(Enum):
     IMPLICIT = 0
     PROPERTY = 1
     BLOCK = 2
-    IMPLICIT_SUMMARY = 3
+    LIST_PROPERTY = 3
+    IMPLICIT_SUMMARY = 4
 
 
 class FieldComponent:
@@ -97,28 +104,76 @@ class ParsedMd:
     """A dictionary of the MD with additional metadata from the md file"""
 
     def __init__(self) -> None:
+        """
+        Constructor for ParsedMd.
+
+        Does nothing else, but is a docstring placeholder.
+        """
         self._fields: dict[str, Field] = {}
         self._meta: dict[str, FieldMetadata] = {}
         self._order: list[str] = []
 
     def __getitem__(self, key: str) -> Field:
-        """Gets an item from the fields"""
+        """
+        Gets an item from the fields.
+
+        Args:
+            key (str): The key of the item to retrieve.
+
+        Returns:
+            Field: The value of the item.
+        """
         return self._fields[key]
 
     def __contains__(self, key: str) -> bool:
-        """Checks if a key is in the fields"""
+        """
+        Checks if a key is in the fields.
+
+        Args:
+            key (str): The key to check for.
+
+        Returns:
+            bool: True if the key is in the fields, false otherwise.
+        """
         return key in self._fields
 
-    def items(self):
-        """Exposes the field dict items()"""
+    def items(self) -> ItemsView[str, Field]:
+        """
+        Exposes the field dict items().
+
+        Returns:
+            list[tuple[str, Field]]: The items of the field dict.
+        """
         return self._fields.items()
 
-    def keys(self):
-        """Exposes the field dict keys()"""
+    def copy(self) -> "ParsedMd":
+        """
+        Creates a new ParsedMd with the same fields and metadata.
+
+        Returns:
+            ParsedMd: A new ParsedMd with the same fields and metadata.
+        """
+        # TBD if this is fast enough or overkill
+        return deepcopy(self)
+
+    def keys(self) -> KeysView[str]:
+        """
+        Exposes the field dict keys().
+
+        Returns:
+            list[str]: The keys of the field dict.
+        """
         return self._fields.keys()
 
     def append_field(self, key: str, value: Field, md_type: FIELD_MD_TYPE) -> None:
-        """Add a field to the field dictionary, storing its location in metadata"""
+        """
+        Add a field to the field dictionary, storing its location in metadata.
+
+        Args:
+            key (str): The key of the field to add.
+            value (Field): The value of the field to add.
+            md_type (FIELD_MD_TYPE): The type of the field in the md file.
+        """
         self._fields[key] = value
         self._meta[key] = FieldMetadata(md_type)
         self._order.append(key)
@@ -126,27 +181,145 @@ class ParsedMd:
     def insert_field(
         self, key: str, value: Field, md_type: FIELD_MD_TYPE, index: int
     ) -> None:
-        """Add a field to the field dictionary, storing its location in metadata"""
+        """
+        Add a field to the field dictionary, storing its location in metadata.
+
+        Args:
+            key (str): The key of the field to add.
+            value (Field): The value of the field to add.
+            md_type (FIELD_MD_TYPE): The type of the field in the md file.
+            index (int): The index to insert the field at.
+        """
         self._fields[key] = value
         self._meta[key] = FieldMetadata(md_type)
         self._order.insert(index, key)
 
     def remove_field(self, key: str) -> None:
-        """Remove a field from the field dictionary"""
+        """
+        Remove a field from the field dictionary.
+
+        Args:
+            key (str): The key of the field to remove.
+        """
         del self._fields[key]
         self._meta.pop(key)
         self._order.remove(key)
 
     def order(self) -> list[str]:
-        """Returns the order of the fields"""
+        """
+        Returns the order of the fields.
+
+        Returns:
+            list[str]: The order of the fields.
+        """
         return list(self._order)
 
     def meta(self, key: str) -> FieldMetadata:
-        """Returns the metadata for a field"""
+        """
+        Returns the metadata for a field.
+
+        Args:
+            key (str): The key of the field to get the metadata of.
+
+        Returns:
+            FieldMetadata: The metadata of the field.
+        """
         return self._meta[key]
 
-    def apply_modifications(self, config: ScrumConfig, modifications: list[tuple[str, str]]) -> "ParsedMd":
-        raise NotImplementedError
+    def apply_modifications(
+        self, config: ScrumConfig, modifications: list[tuple[str, str]]
+    ) -> "ParsedMd":
+        """
+        Applies the modifications (in MD format) to the field listed, returning a new ParsedMd
+
+        Args:
+            config (ScrumConfig): The config to use for type checking.
+            modifications (list[tuple[str, str]]): The modifications to apply.
+
+        Returns:
+            ParsedMd: A new ParsedMd with the modifications applied.
+        """
+        new_md = self.copy()
+        for key, new_value in modifications:
+            if key == "index":
+                raise UnsupportedModificationError(
+                    "Index can not be modified inside ScrumMD"
+                )
+
+            # There's not _really_ enough overlap here to reuse the code in extract_fields (given
+            # that there's more code there to figure out what type it is, which isn't so relevant
+            # here)
+            stripped = new_value.strip()
+            if (
+                len(new_value) > 1
+                and stripped.startswith("-")
+                and not (stripped.startswith("---"))
+                and all(v.strip().startswith("-") for v in new_value.split("\n"))
+            ):
+                # Treating as list
+                field: Field = [FieldStr(v[1:].strip()) for v in stripped.split("\n")]
+            else:
+                field = typed_field(stripped)
+
+            if key not in self._fields:
+                logical_type = FieldMetadata(_logical_type(config, key, field))
+                new_md._meta[key] = logical_type
+                if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
+                    new_md._order.insert(0, key)
+                else:
+                    new_md._order.append(key)
+
+            if new_md._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
+                _assert_valid_as_property(key, field)
+
+            new_md._fields[key] = field
+        return new_md
+
+
+def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
+    """Returns the most sensible (or necessary) type for this field
+
+    Args:
+        config (ScrumConfig): Full ScrumMD config
+        key (str): Name of the field
+        field (Field): Value of the field
+
+    Returns:
+        FIELD_MD_TYPE: The suggested physical type of the field
+    """
+    if config.allow_header_summary and key == "summary":
+        return FIELD_MD_TYPE.IMPLICIT_SUMMARY
+    if isinstance(field, list):
+        return FIELD_MD_TYPE.LIST_PROPERTY
+    if isinstance(field, FieldStr) and "\n" not in field:
+        return FIELD_MD_TYPE.PROPERTY
+    return FIELD_MD_TYPE.BLOCK
+
+
+def _assert_valid_as_property(field_name: str, field: Field) -> None:
+    """Raise an exception if the field is currently a property, and its new value doesn't support it.
+
+    Args:
+        field_name (str): Name of the field
+        field (Field): Value that is attempting to be saved
+
+    Raises:
+        ImplicitChangeOfTypeError: If the existing physical type doesn't support the new value of
+            the field
+    """
+    # TODO: Add an 'overwrite type' option
+    if isinstance(field, FieldStr) and ("\n" in field):
+        raise ImplicitChangeOfTypeError(
+            "Attempting to set property %s to a multi-line string.", field_name
+        )
+
+    if isinstance(field, list) and any(("\n" in entry) for entry in field):
+        raise ImplicitChangeOfTypeError(
+            "Attempting to set entry in list %s to include a multi-line string.",
+            field_name,
+        )
+
+
 def get_block_name(md_line: str) -> str:
     """Get the name of the block from the header line"""
     results = re.match(r"\#+(.*)", md_line)
