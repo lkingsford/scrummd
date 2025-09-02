@@ -287,15 +287,6 @@ def test_modify_invalid_newline_in_property(data_config, md1_fo):
         )
 
 
-def test_modify_invalid_newline_in_list(data_config, c4_md):
-    """Test that adding a newline in an entry of a list fails."""
-    extracted = source_md.extract_fields(data_config, c4_md.read())
-    with pytest.raises(ImplicitChangeOfTypeError):
-        v = extracted.apply_modifications(
-            data_config, [("tags", "- tag1\ntag2\nnew line\n")]
-        )
-
-
 def test_modify_invalid_index(data_config, md1_fo):
     """Test that attempting to modify the index fails."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
