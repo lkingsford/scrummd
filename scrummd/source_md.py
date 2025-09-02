@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import re
 
+from copy import deepcopy
 from enum import Enum
 from typing import Optional, Any, Union
 
@@ -143,6 +144,16 @@ class ParsedMd:
         """
         return self._fields.items()
 
+    def copy(self) -> "ParsedMd":
+        """
+        Creates a new ParsedMd with the same fields and metadata.
+
+        Returns:
+            ParsedMd: A new ParsedMd with the same fields and metadata.
+        """
+        # TBD if this is fast enough or overkill
+        return deepcopy(self)
+
     def keys(self) -> list[str]:
         """
         Exposes the field dict keys().
@@ -227,21 +238,40 @@ class ParsedMd:
             ParsedMd: A new ParsedMd with the modifications applied.
         """
         """Applies the modifications (in MD format) to the field listed, returning a new ParsedMd"""
-        for key, value in modifications:
+        new_md = self.copy()
+        for key, new_value in modifications:
             if key == "index":
                 raise UnsupportedModificationError(
                     "Index can not be modified inside ScrumMD"
                 )
 
-            # TODO: this isn't done yet
-            field = FieldStr(value)
+            # There's not _really_ enough overlap here to reuse the code in extract_fields (given
+            # that there's more code there to figure out what type it is, which isn't so relevant
+            # here)
+            stripped = new_value.strip()
+            if (
+                len(new_value) > 1
+                and new_value[0] == "-"
+                and not (len(new_value) > 3 and new_value[0:3] == "---")
+            ):
+                # Treating as list
+                field: Field = [FieldStr(v.strip()[1:]) for v in stripped.split("\n")]
+            else:
+                field = typed_field(stripped)
 
             if key not in self._fields:
-                self._order.append(key)
-                self._meta[key] = FieldMetadata(_logical_type(config, key, field))
-            if self._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
+                logical_type = FieldMetadata(_logical_type(config, key, field))
+                new_md._meta[key] = logical_type
+                if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
+                    self._order.insert(0, key)
+                else:
+                    self._order.append(key)
+
+            if new_md._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
                 _assert_valid_as_property(key, field)
-        return self
+
+            new_md._fields[key] = field
+        return new_md
 
 
 def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
