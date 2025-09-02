@@ -49,6 +49,7 @@ def sample_card(data_config):
         path=FieldStr("test/i.md"),
         udf={"assignee": FieldStr("me"), "estimate": FieldNumber(5)},
         _config=data_config,
+        parsed_md=None,  # Not actually valid - but this isn't in use in these tests
     )
 
 
