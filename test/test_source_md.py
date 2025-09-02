@@ -223,7 +223,7 @@ def test_fieldstr_component(input, expected):
 def test_modify_property_basic(data_config, md1_fo):
     """Test modifying a property"""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = modify = extracted.apply_modifications(data_config, {"status": "Done"})
+    modify = modify = extracted.apply_modifications(data_config, [("status", "Done")])
     assert modify["status"] == "Done"
     assert modify.meta("status").md_type == source_md.FIELD_MD_TYPE.PROPERTY
 
@@ -232,7 +232,7 @@ def test_modify_block_basic(data_config, md1_fo):
     """Test modifying a block"""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     modify = extracted.apply_modifications(
-        data_config, {"description": "A\n new\n multiline description."}
+        data_config, [("description", "A\n new\n multiline description.")]
     )
     assert modify["description"] == "A\n new\n multiline description."
     assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
@@ -241,7 +241,7 @@ def test_modify_block_basic(data_config, md1_fo):
 def test_modify_header_summary(data_config, md3_fo):
     """Test modifying a header summary"""
     extracted = source_md.extract_fields(data_config, md3_fo.read())
-    modify = extracted.apply_modifications(data_config, {"summary": "A new summary"})
+    modify = extracted.apply_modifications(data_config, [("summary", "A new summary")])
     assert modify["summary"] == "A new summary"
     assert modify.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
 
@@ -250,7 +250,7 @@ def test_modify_list(data_config, c4_md):
     """Test modifying a list field"""
     extracted = source_md.extract_fields(data_config, c4_md.read())
     modify = extracted.apply_modifications(
-        data_config, {"tags": """- new tag 1\n- new tag 2"""}
+        data_config, [("tags", """- new tag 1\n- new tag 2""")]
     )
     assert modify["tags"] == ["new tag 1", "new tag 2"]
     assert modify.meta("tags").md_type == source_md.FIELD_MD_TYPE.PROPERTY
@@ -260,8 +260,17 @@ def test_modify_invalid_newline_in_property(data_config, md1_fo):
     """Test that adding a newline in a property fails."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     with pytest.raises(ImplicitChangeOfTypeError):
-        modify = modify = extracted.apply_modifications(
-            data_config, {"status": "Done\nActually?"}
+        modify = extracted.apply_modifications(
+            data_config, [("status", "Done\nActually?")]
+        )
+
+
+def test_modify_invalid_newline_in_list(data_config, c4_md):
+    """Test that adding a newline in an entry of a list fails."""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    with pytest.raises(ImplicitChangeOfTypeError):
+        modify = extracted.apply_modifications(
+            data_config, [{"tags", ["tag1", "tag2\nnew line"]}]
         )
 
 
