@@ -151,7 +151,7 @@ class ParsedMd:
 
     def apply_modifications(
         self, config: ScrumConfig, modifications: list[tuple[str, str]]
-    ):
+    ) -> "ParsedMd":
         """Applies the modifications (in MD format) to the field listed, returning a new ParsedMd"""
         for key, value in modifications:
             if key == "index":
@@ -161,9 +161,12 @@ class ParsedMd:
 
             # TODO: this isn't done yet
             field = FieldStr(value)
+
             if key not in self._fields:
                 self._order.append(key)
                 self._meta[key] = FieldMetadata(_logical_type(config, key, field))
+            if self._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
+                _assert_valid_as_property(key, field)
         return self
 
 
@@ -189,6 +192,12 @@ def _assert_valid_as_property(field_name: str, field: Field) -> None:
     if isinstance(field, FieldStr) and ("\n" in field):
         raise ImplicitChangeOfTypeError(
             "Attempting to set property %s to a multi-line string.", field_name
+        )
+
+    if isinstance(field, list) and any(("\n" in entry) for entry in list):
+        raise ImplicitChangeOfTypeError(
+            "Attempting to set entry in list %s to include a multi-line string.",
+            field_name,
         )
 
 
