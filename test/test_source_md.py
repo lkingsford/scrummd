@@ -286,10 +286,10 @@ def test_modify_multiple(data_config, md1_fo):
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     modify = extracted.apply_modifications(
         data_config,
-        {
-            "status": "Done",
-            "description": "A\n new\n multiline description.",
-        },
+        [
+            ("status", "Done"),
+            ("description", "A\n new\n multiline description."),
+        ],
     )
     assert modify["status"] == "Done"
     assert modify["description"] == "A\n new\n multiline description."
@@ -300,7 +300,7 @@ def test_modify_multiple(data_config, md1_fo):
 def test_modify_add_logical_block(data_config, md1_fo):
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     modify = extracted.apply_modifications(
-        data_config, {"new field": "A\n new\n multiline description."}
+        data_config, [("new field", "A\n new\n multiline description.")]
     )
     assert modify["new field"] == "A\n new\n multiline description."
     assert modify.meta("new field").md_type == source_md.FIELD_MD_TYPE.BLOCK
@@ -309,7 +309,9 @@ def test_modify_add_logical_block(data_config, md1_fo):
 
 def test_modify_add_logical_property(data_config, md1_fo):
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = extracted.apply_modifications(data_config, {"new field": "A new summary"})
+    modify = extracted.apply_modifications(
+        data_config, [("new field", "A new summary")]
+    )
     assert modify["new field"] == "A new summary"
     assert modify.meta("new field").md_type == source_md.FIELD_MD_TYPE.PROPERTY
     assert modify.order[-1] == "new field"
