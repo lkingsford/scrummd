@@ -291,8 +291,8 @@ def test_modify_invalid_newline_in_list(data_config, c4_md):
     """Test that adding a newline in an entry of a list fails."""
     extracted = source_md.extract_fields(data_config, c4_md.read())
     with pytest.raises(ImplicitChangeOfTypeError):
-        extracted.apply_modifications(
-            data_config, [("tags", ["tag1", "tag2\nnew line"])]
+        v = extracted.apply_modifications(
+            data_config, [("tags", "- tag1\ntag2\nnew line\n")]
         )
 
 
@@ -300,7 +300,7 @@ def test_modify_invalid_index(data_config, md1_fo):
     """Test that attempting to modify the index fails."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     with pytest.raises(UnsupportedModificationError):
-        modify = extracted.apply_modifications(data_config, {"index": "duck"})
+        modify = extracted.apply_modifications(data_config, [("index", "duck")])
 
 
 def test_modify_multiple(data_config, md1_fo):
@@ -325,8 +325,8 @@ def test_modify_add_logical_block(data_config, md1_fo):
         data_config, [("new field", "A\n new\n multiline description.")]
     )
     assert modify["new field"] == "A\n new\n multiline description."
-    assert modify.meta("new field").md_type == source_md.FIELD_MD_TYPE.BLOCK
-    assert modify.order[-1] == "new field"
+    assert modify._meta["new field"].md_type == source_md.FIELD_MD_TYPE.BLOCK
+    assert modify._order[-1] == "new field"
 
 
 def test_modify_add_logical_property(data_config, md1_fo):
@@ -335,5 +335,5 @@ def test_modify_add_logical_property(data_config, md1_fo):
         data_config, [("new field", "A new summary")]
     )
     assert modify["new field"] == "A new summary"
-    assert modify.meta("new field").md_type == source_md.FIELD_MD_TYPE.PROPERTY
-    assert modify.order[-1] == "new field"
+    assert modify._meta["new field"].md_type == source_md.FIELD_MD_TYPE.PROPERTY
+    assert modify._order[-1] == "new field"
