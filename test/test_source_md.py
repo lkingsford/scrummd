@@ -260,8 +260,10 @@ Stuff here
 
 def test_modify_header_summary(data_config, md3_fo):
     """Test modifying a header summary"""
-    extracted = source_md.extract_fields(data_config, md3_fo.read())
-    modify = extracted.apply_modifications(data_config, [("summary", "A new summary")])
+    config = copy(data_config)
+    config.allow_header_summary = True
+    extracted = source_md.extract_fields(config, md3_fo.read())
+    modify = extracted.apply_modifications(config, [("summary", "A new summary")])
     assert modify["summary"] == "A new summary"
     assert modify.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
 
