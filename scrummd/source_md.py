@@ -255,7 +255,7 @@ class ParsedMd:
                 and not (len(new_value) > 3 and new_value[0:3] == "---")
             ):
                 # Treating as list
-                field: Field = [FieldStr(v.strip()[1:]) for v in stripped.split("\n")]
+                field: Field = [FieldStr(v[1:].strip()) for v in stripped.split("\n")]
             else:
                 field = typed_field(stripped)
 
@@ -263,9 +263,9 @@ class ParsedMd:
                 logical_type = FieldMetadata(_logical_type(config, key, field))
                 new_md._meta[key] = logical_type
                 if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
-                    self._order.insert(0, key)
+                    new_md._order.insert(0, key)
                 else:
-                    self._order.append(key)
+                    new_md._order.append(key)
 
             if new_md._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
                 _assert_valid_as_property(key, field)
@@ -287,9 +287,9 @@ def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
     """
     if config.allow_header_summary and key == "summary":
         return FIELD_MD_TYPE.IMPLICIT_SUMMARY
-    if not isinstance(field, list) and not (
-        isinstance(field, FieldStr) and "\n" in field
-    ):
+    if isinstance(field, list):
+        return FIELD_MD_TYPE.PROPERTY
+    if isinstance(field, FieldStr) and "\n" not in field:
         return FIELD_MD_TYPE.PROPERTY
     return FIELD_MD_TYPE.BLOCK
 
@@ -306,17 +306,12 @@ def _assert_valid_as_property(field_name: str, field: Field) -> None:
             the field
     """
     # TODO: Add an 'overwrite type' option
-    if isinstance(field, list):
-        raise ImplicitChangeOfTypeError(
-            "Attempting to set property %s to a list.", field_name
-        )
-
     if isinstance(field, FieldStr) and ("\n" in field):
         raise ImplicitChangeOfTypeError(
             "Attempting to set property %s to a multi-line string.", field_name
         )
 
-    if isinstance(field, list) and any(("\n" in entry) for entry in list):
+    if isinstance(field, list) and any(("\n" in entry) for entry in field):
         raise ImplicitChangeOfTypeError(
             "Attempting to set entry in list %s to include a multi-line string.",
             field_name,
