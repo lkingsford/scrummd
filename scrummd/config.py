@@ -61,6 +61,9 @@ class ScrumConfig(CollectionConfig):
 
     collections: dict[str, RawCollectionConfig] = field(default_factory=dict)
     """Embedded collection config"""
+    # The RawCollectionConfig is used here to enable reading from the file straight into this with
+    # minimal manual code, but beginning to face issues proving typing/correctness.
+    # Will limit to CollectionConfig in the future.
 
     scard: ScardConfig = field(default_factory=ScardConfig)
 
