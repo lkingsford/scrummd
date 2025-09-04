@@ -49,6 +49,7 @@ def sample_card(data_config):
         path=FieldStr("test/i.md"),
         udf={"assignee": FieldStr("me"), "estimate": FieldNumber(5)},
         _config=data_config,
+        parsed_md=None,  # Not actually valid - but this isn't in use in these tests
     )
 
 
@@ -73,9 +74,9 @@ def test_format_card(data_config, sample_card, input_format, expected):
         [FieldNumber(123), "123"],
         [FieldNumber(123.0), "123"],
         [FieldNumber(123.1), "123.1"],
-        [["a", "b", "3"], "[a, b, 3]"],
+        [[FieldStr("a"), FieldStr("b"), FieldStr("3")], "[a, b, 3]"],
     ],
 )
-def test_format_field(input_data: Field | list[str], expected: str):
+def test_format_field(input_data: Field | list[FieldStr], expected: str):
     """Test that formatting a field produces the expected output"""
     assert format_field(input_data) == expected

@@ -1,49 +1,52 @@
 from copy import copy
+from io import TextIOWrapper
 import os
 import pytest
+from scrummd.exceptions import ImplicitChangeOfTypeError, UnsupportedModificationError
 import scrummd.source_md as source_md
+from typing import Generator
 from fixtures import data_config
 
 # Should these be one fixture?
 
 
 @pytest.fixture(scope="function")
-def md1_fo() -> str:
+def md1_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/md1.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def md2_fo() -> str:
+def md2_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/md2.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def md3_fo() -> str:
+def md3_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/special_cases/header_summary/md3.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c4_md() -> str:
+def c4_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c4.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c5_md() -> str:
+def c5_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c5.md")
     yield fo
     fo.close()
 
 
 @pytest.fixture(scope="function")
-def c7_md() -> str:
+def c7_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection4/c7.md")
     yield fo
     fo.close()
@@ -70,15 +73,15 @@ here"""
 @pytest.mark.parametrize(
     ["expected", "result"],
     [
-        ["# Header", "header"],
-        ["## Header 2", "header 2"],
-        ["### Header #3", "header #3"],
-        ["###Header No Space", "header no space"],
+        ["# Header", "Header"],
+        ["## Header 2", "Header 2"],
+        ["### Header #3", "Header #3"],
+        ["###Header No Space", "Header No Space"],
     ],
 )
-def test_get_block_name(data_config, expected, result):
+def test_get_raw_block_name(data_config, expected, result):
     """Verify that get_block_name returns the string part of # headers"""
-    assert source_md.get_block_name(expected) == result
+    assert source_md.get_raw_block_name(expected) == result
 
 
 @pytest.mark.parametrize(
@@ -134,6 +137,46 @@ def test_underline_header_values(data_config, md3_fo, input, expected):
     assert results[input] == expected
 
 
+def test_property_meta(data_config, md1_fo):
+    results = source_md.extract_fields(data_config, md1_fo.read())
+    assert results.meta("summary").md_type == source_md.FIELD_MD_TYPE.PROPERTY
+    assert results.meta("summary").raw_field_name == "Summary"
+
+
+def test_block_meta(data_config, md1_fo):
+    results = source_md.extract_fields(data_config, md1_fo.read())
+    assert results.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+    assert results.meta("description").raw_field_name == "Description"
+
+
+def test_header_list_meta(data_config, c4_md):
+    config = copy(data_config)
+    results = source_md.extract_fields(config, c4_md.read())
+    assert results.meta("tags").md_type == source_md.FIELD_MD_TYPE.LIST_PROPERTY
+    assert results.meta("tags").raw_field_name == "Tags"
+
+
+def test_underline_header_summary_meta(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
+
+
+def test_underline_head_summary_order(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results.order() == [
+        "note",
+        "summary",
+        "double equals",
+        "list",
+        "entry after list",
+    ]
+
+
 def test_ignore_code_block(data_config, md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
     results = source_md.extract_fields(data_config, md2_fo.read())
@@ -184,3 +227,124 @@ def test_fieldstr_component(input, expected):
     """Test that the components of a str are properly separated"""
     field = source_md.FieldStr(input)
     assert field.components() == expected
+
+
+def test_modify_property_basic(data_config, md1_fo):
+    """Test modifying a property"""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    modify = modify = extracted.apply_modifications(data_config, [("status", "Done")])
+    assert modify["status"] == "Done"
+    assert modify.meta("status").md_type == source_md.FIELD_MD_TYPE.PROPERTY
+
+
+def test_modify_block_basic(data_config, md1_fo):
+    """Test modifying a block"""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    modify = extracted.apply_modifications(
+        data_config, [("description", "A\n new\n multiline description.")]
+    )
+    assert modify["description"] == "A\n new\n multiline description."
+    assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+
+
+def test_modify_block_with_code_block(data_config, md1_fo):
+    """Test modifying a block that includes a code block"""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    example_card_text = """Example card:
+```
+---
+Summary: Test Card 4
+Index: 5
+---
+# Description
+
+Stuff here
+```"""
+    modify = extracted.apply_modifications(
+        data_config, [("description", example_card_text)]
+    )
+    assert modify["description"] == example_card_text
+    assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+
+
+def test_modify_header_summary(data_config, md3_fo):
+    """Test modifying a header summary"""
+    config = copy(data_config)
+    config.allow_header_summary = True
+    extracted = source_md.extract_fields(config, md3_fo.read())
+    modify = extracted.apply_modifications(config, [("summary", "A new summary")])
+    assert modify["summary"] == "A new summary"
+    assert modify.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
+    assert modify.meta("summary").raw_field_name == "Summary"
+
+
+def test_extract_format_underline(data_config, md3_fo):
+    """Test that the raw is extracted correctly from an underderlined header"""
+    config = copy(data_config)
+    config.allow_header_summary = True
+    extracted = source_md.extract_fields(config, md3_fo.read())
+    assert extracted.meta("double equals").raw_field_name == "Double Equals"
+
+
+def test_modify_header_list(data_config, c4_md):
+    """Test modifying a list field"""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.apply_modifications(
+        data_config, [("tags", """- new tag 1\n- new tag 2""")]
+    )
+    assert modify["tags"] == ["new tag 1", "new tag 2"]
+    assert modify.meta("tags").md_type == source_md.FIELD_MD_TYPE.LIST_PROPERTY
+    assert modify.meta("tags").raw_field_name == "Tags"
+
+
+def test_modify_invalid_newline_in_property(data_config, md1_fo):
+    """Test that adding a newline in a property fails."""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    with pytest.raises(ImplicitChangeOfTypeError):
+        extracted.apply_modifications(data_config, [("status", "Done\nActually?")])
+
+
+def test_modify_invalid_index(data_config, md1_fo):
+    """Test that attempting to modify the index fails."""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    with pytest.raises(UnsupportedModificationError):
+        extracted.apply_modifications(data_config, [("index", "duck")])
+
+
+def test_modify_multiple(data_config, md1_fo):
+    """Test modifying multiple fields."""
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    modify = extracted.apply_modifications(
+        data_config,
+        [
+            ("status", "Done"),
+            ("description", "A\n new\n multiline description."),
+        ],
+    )
+    assert modify["status"] == "Done"
+    assert modify["description"] == "A\n new\n multiline description."
+    assert modify.meta("status").md_type == source_md.FIELD_MD_TYPE.PROPERTY
+    assert modify.meta("status").raw_field_name == "Status"
+    assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
+    assert modify.meta("description").raw_field_name == "Description"
+
+
+def test_modify_add_logical_block(data_config, md1_fo):
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    modify = extracted.apply_modifications(
+        data_config, [("New field", "A\n new\n multiline description.")]
+    )
+    assert modify["new field"] == "A\n new\n multiline description."
+    assert modify.meta("new field").md_type == source_md.FIELD_MD_TYPE.BLOCK
+    assert modify.meta("new field").raw_field_name == "New field"
+    assert modify._order[-1] == "new field"
+
+
+def test_modify_add_logical_property(data_config, md1_fo):
+    extracted = source_md.extract_fields(data_config, md1_fo.read())
+    modify = extracted.apply_modifications(
+        data_config, [("new field", "A new summary")]
+    )
+    assert modify["new field"] == "A new summary"
+    assert modify._meta["new field"].md_type == source_md.FIELD_MD_TYPE.PROPERTY
+    assert modify._order[-1] == "new field"

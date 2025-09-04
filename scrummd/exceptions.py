@@ -41,3 +41,11 @@ class RequiredFieldNotPresentError(RuleViolationError):
     """Called when a field required by config isn't present"""
 
     pass
+
+
+class ImplicitChangeOfTypeError(ValidationError):
+    """Called when the existing type of a field (list, property, block) no longer supports the new value."""
+
+
+class UnsupportedModificationError(ValidationError):
+    """Called when a field can't be modified."""

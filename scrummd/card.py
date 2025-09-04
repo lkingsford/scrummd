@@ -7,7 +7,13 @@ from scrummd.exceptions import (
     RequiredFieldNotPresentError,
 )
 from scrummd.config import ScrumConfig, CollectionConfig
-from scrummd.source_md import FieldStr, extract_collection, extract_fields, Field
+from scrummd.source_md import (
+    FieldStr,
+    extract_collection,
+    extract_fields,
+    Field,
+    ParsedMd,
+)
 
 
 @dataclass
@@ -34,6 +40,9 @@ class Card:
 
     _config: ScrumConfig
     """Config card created with"""
+
+    parsed_md: ParsedMd
+    """The MD with additional metadata"""
 
     def get_field(self, field_name: str) -> Optional[Field]:
         """Get a field from either the card if present, or UDF if not
@@ -93,7 +102,7 @@ class Card:
         self.assert_valid_rules(self._config)
 
 
-def assert_valid_fields(config: ScrumConfig, fields: dict[str, Field]) -> None:
+def assert_valid_fields(config: ScrumConfig, fields: ParsedMd) -> None:
     """Raise an error if there is an (internal or config) rule violation
 
     Args:
@@ -156,44 +165,47 @@ def from_str(
     Returns:
         Card: The card for the md file
     """
-    fields: dict[str, Field] = extract_fields(config, input_card)
+    parsed_md: ParsedMd = extract_fields(config, input_card)
     collections: list[str] = [collection]
     index = path.name.split(".")[0]
-    udf: dict[str, Field] = {k: v for k, v in fields.items() if k not in NON_UDF_FIELDS}
+    udf: dict[str, Field] = {
+        k: v for k, v in parsed_md.items() if k not in NON_UDF_FIELDS
+    }
 
-    assert_valid_fields(config, fields)
+    assert_valid_fields(config, parsed_md)
 
-    if "index" in fields:
-        assert isinstance(fields["index"], str)
-        index = fields["index"]
+    if "index" in parsed_md:
+        assert isinstance(parsed_md["index"], str)
+        index = parsed_md["index"]
 
-    if "collections" in fields:
-        assert isinstance(fields["collections"], list)
-        collections.extend(fields["collections"])
+    if "collections" in parsed_md:
+        assert isinstance(parsed_md["collections"], list)
+        collections.extend(parsed_md["collections"])
 
-    if "tags" in fields:
-        assert isinstance(fields["tags"], list)
-        collections.extend(fields["tags"])
+    if "tags" in parsed_md:
+        assert isinstance(parsed_md["tags"], list)
+        collections.extend(parsed_md["tags"])
 
     defined_collections: dict[str, list[str]] = {}
-    if "items" in fields:
-        defined_collections[index] = extract_collection(fields["items"])
+    if "items" in parsed_md:
+        defined_collections[index] = extract_collection(parsed_md["items"])
 
-    for key, value in fields.items():
+    for key, value in parsed_md.items():
         if value is not None and (isinstance(value, str) or isinstance(value, list)):
             defined_collection = extract_collection(value)
             if len(defined_collection) > 0:
                 defined_collections[f"{index}.{key}"] = defined_collection
 
-    assert isinstance(fields["summary"], str)
+    assert isinstance(parsed_md["summary"], str)
     new_card = Card(
         path=str(path),
-        summary=fields["summary"],
+        summary=parsed_md["summary"],
         index=index,
         collections=collections,
         defined_collections=defined_collections,
         udf=udf,
         _config=config,
+        parsed_md=parsed_md,
     )
 
     return new_card

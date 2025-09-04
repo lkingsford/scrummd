@@ -1,17 +1,31 @@
 from dataclasses import dataclass
 import re
 
+from copy import deepcopy
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Optional
+from collections.abc import ItemsView, KeysView
 
 from scrummd.config import ScrumConfig
-from scrummd.exceptions import InvalidFileError
+from scrummd.exceptions import (
+    InvalidFileError,
+    ImplicitChangeOfTypeError,
+    UnsupportedModificationError,
+)
+
+
+class FIELD_MD_TYPE(Enum):
+    """How the field appears in the md file itself"""
+
+    IMPLICIT = 0
+    PROPERTY = 1
+    BLOCK = 2
+    LIST_PROPERTY = 3
+    IMPLICIT_SUMMARY = 4
 
 
 class FieldComponent:
     """A section of the field component"""
-
-    pass
 
 
 @dataclass
@@ -69,26 +83,281 @@ class FieldStr(str):
         return self._components
 
 
-FieldNumber = float
+class FieldNumber(float, FieldComponent):
+    """A float with the extra parsed information"""
+
+    pass
+
 
 Field = FieldStr | list[FieldStr] | FieldNumber
 """A field from the md file"""
 
 
-def get_block_name(md_line: str) -> str:
-    """Get the name of the block from the header line"""
+@dataclass
+class FieldMetadata:
+    """Metadata for a field
+
+    Stores the logical type of the field, as well as the original field name.
+    """
+
+    md_type: FIELD_MD_TYPE
+    """The physical type of the field, as it appears in the md file"""
+
+    raw_field_name: str
+    """The original field name, as it appears in the md file"""
+
+
+class ParsedMd:
+    """A dictionary of the MD with additional metadata from the md file"""
+
+    def __init__(self) -> None:
+        """
+        Constructor for ParsedMd.
+
+        Does nothing else, but is a docstring placeholder.
+        """
+        self._fields: dict[str, Field] = {}
+        self._meta: dict[str, FieldMetadata] = {}
+        self._order: list[str] = []
+
+    def __getitem__(self, key: str) -> Field:
+        """
+        Gets an item from the fields.
+
+        Args:
+            key (str): The key of the item to retrieve.
+
+        Returns:
+            Field: The value of the item.
+        """
+        return self._fields[key]
+
+    def __contains__(self, key: str) -> bool:
+        """
+        Checks if a key is in the fields.
+
+        Args:
+            key (str): The key to check for.
+
+        Returns:
+            bool: True if the key is in the fields, false otherwise.
+        """
+        return key in self._fields
+
+    def items(self) -> ItemsView[str, Field]:
+        """
+        Exposes the field dict items().
+
+        Returns:
+            list[tuple[str, Field]]: The items of the field dict.
+        """
+        return self._fields.items()
+
+    def copy(self) -> "ParsedMd":
+        """
+        Creates a new ParsedMd with the same fields and metadata.
+
+        Returns:
+            ParsedMd: A new ParsedMd with the same fields and metadata.
+        """
+        # TBD if this is fast enough or overkill
+        return deepcopy(self)
+
+    def keys(self) -> KeysView[str]:
+        """
+        Exposes the field dict keys().
+
+        Returns:
+            list[str]: The keys of the field dict.
+        """
+        return self._fields.keys()
+
+    def append_field(self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE) -> None:
+        """
+        Add a field to the field dictionary, storing its location in metadata.
+
+        Args:
+            key (str): The key of the field to add.
+            value (Field): The value of the field to add.
+            md_type (FIELD_MD_TYPE): The type of the field in the md file.
+        """
+        key = raw_key.casefold()
+        self._fields[key] = value
+        self._meta[key] = FieldMetadata(md_type, raw_key)
+        self._order.append(key)
+
+    def insert_field(
+        self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, index: int
+    ) -> None:
+        """
+        Add a field to the field dictionary, storing its location in metadata.
+
+        Args:
+            key (str): The key of the field to add.
+            value (Field): The value of the field to add.
+            md_type (FIELD_MD_TYPE): The type of the field in the md file.
+            index (int): The index to insert the field at.
+        """
+        key = raw_key.casefold()
+        self._fields[key] = value
+        self._meta[key] = FieldMetadata(md_type, raw_key)
+        self._order.insert(index, key)
+
+    def remove_field(self, key: str) -> None:
+        """
+        Remove a field from the field dictionary.
+
+        Args:
+            key (str): The key of the field to remove.
+        """
+        del self._fields[key]
+        self._meta.pop(key)
+        self._order.remove(key)
+
+    def order(self) -> list[str]:
+        """
+        Returns the order of the fields.
+
+        Returns:
+            list[str]: The order of the fields.
+        """
+        return list(self._order)
+
+    def meta(self, key: str) -> FieldMetadata:
+        """
+        Returns the metadata for a field.
+
+        Args:
+            key (str): The key of the field to get the metadata of.
+
+        Returns:
+            FieldMetadata: The metadata of the field.
+        """
+        return self._meta[key]
+
+    def apply_modifications(
+        self, config: ScrumConfig, modifications: list[tuple[str, str]]
+    ) -> "ParsedMd":
+        """
+        Applies the modifications (in MD format) to the field listed, returning a new ParsedMd
+
+        Args:
+            config (ScrumConfig): The config to use for type checking.
+            modifications (list[tuple[str, str]]): The modifications to apply.
+
+        Returns:
+            ParsedMd: A new ParsedMd with the modifications applied.
+        """
+        new_md = self.copy()
+        for raw_key, new_value in modifications:
+            key = raw_key.casefold()
+            if key == "index":
+                raise UnsupportedModificationError(
+                    "Index can not be modified inside ScrumMD"
+                )
+
+            # There's not _really_ enough overlap here to reuse the code in extract_fields (given
+            # that there's more code there to figure out what type it is, which isn't so relevant
+            # here)
+            stripped = new_value.strip()
+            if (
+                len(new_value) > 1
+                and stripped.startswith("-")
+                and not (stripped.startswith("---"))
+                and all(v.strip().startswith("-") for v in new_value.split("\n"))
+            ):
+                # Treating as list
+                field: Field = [FieldStr(v[1:].strip()) for v in stripped.split("\n")]
+            else:
+                field = typed_field(stripped)
+
+            if key not in self._fields:
+                logical_type = FieldMetadata(_logical_type(config, key, field), raw_key)
+                new_md._meta[key] = logical_type
+                if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
+                    new_md._order.insert(0, key)
+                else:
+                    new_md._order.append(key)
+
+            if new_md._meta[key].md_type == FIELD_MD_TYPE.PROPERTY:
+                _assert_valid_as_property(key, field)
+
+            new_md._fields[key] = field
+        return new_md
+
+
+def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
+    """Returns the most sensible (or necessary) type for this field
+
+    Args:
+        config (ScrumConfig): Full ScrumMD config
+        key (str): Name of the field
+        field (Field): Value of the field
+
+    Returns:
+        FIELD_MD_TYPE: The suggested physical type of the field
+    """
+    if config.allow_header_summary and key == "summary":
+        return FIELD_MD_TYPE.IMPLICIT_SUMMARY
+    if isinstance(field, list):
+        return FIELD_MD_TYPE.LIST_PROPERTY
+    if isinstance(field, FieldStr) and "\n" not in field:
+        return FIELD_MD_TYPE.PROPERTY
+    return FIELD_MD_TYPE.BLOCK
+
+
+def _assert_valid_as_property(field_name: str, field: Field) -> None:
+    """Raise an exception if the field is currently a property, and its new value doesn't support it.
+
+    Args:
+        field_name (str): Name of the field
+        field (Field): Value that is attempting to be saved
+
+    Raises:
+        ImplicitChangeOfTypeError: If the existing physical type doesn't support the new value of
+            the field
+    """
+    # TODO: Add an 'overwrite type' option
+    if isinstance(field, FieldStr) and ("\n" in field):
+        raise ImplicitChangeOfTypeError(
+            "Attempting to set property %s to a multi-line string.", field_name
+        )
+
+    if isinstance(field, list) and any(("\n" in entry) for entry in field):
+        raise ImplicitChangeOfTypeError(
+            "Attempting to set entry in list %s to include a multi-line string.",
+            field_name,
+        )
+
+
+def get_raw_block_name(md_line: str) -> str:
+    """Get the name of the block from the header line
+
+    Args:
+        md_line (str): Line to remove any preceeding '#'s from
+
+    Returns
+        str: Text of header
+    """
     results = re.match(r"\#+(.*)", md_line)
     if results is not None:
-        return results.group(1).casefold().strip()
+        return results.group(1).strip()
     else:
         raise InvalidFileError("%s has no valid header", md_line)
 
 
 def split_property(md_line: str) -> tuple[str, str]:
-    """Split the property"""
+    """Split the property into its key and value
+
+    Args:
+        md_line (str): Line in the format of "key: value" to split
+
+    Returns:
+        tuple(str, str): Key and value
+    """
     results = re.match(r"\W*([^\:]+)\:(.*)", md_line)
     if results is not None:
-        return (results.group(1).casefold().strip(), results.group(2).strip())
+        return (results.group(1).strip(), results.group(2).strip())
     else:
         raise InvalidFileError("Error parsing property line %s", md_line)
 
@@ -149,7 +418,7 @@ def typed_field(field: str) -> Field:
         return FieldStr(field)
 
 
-def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
+def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
     """Extract all fields from the md_file
 
     There are two types of fields:
@@ -171,7 +440,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
         dict[str, Field]: a dictionary of all field names and values
     """
 
-    fields: dict[str, Field] = {}
+    parsed: ParsedMd = ParsedMd()
 
     class BlockStatus(Enum):
         NO_BLOCK = 0
@@ -197,18 +466,18 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
                 continue
             elif stripped_line[0] == "#":
-                block_name = get_block_name(stripped_line)
+                raw_block_name = get_raw_block_name(stripped_line)
+                block_name = raw_block_name
                 block_value = ""
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 continue
-            elif len(stripped_line) >= 4 and (
-                stripped_line[0:4] == "====" or stripped_line[0:4] == "----"
-            ):
+            elif stripped_line.startswith("====") or stripped_line.startswith("----"):
                 # Currently, ==== and ---- are conflated, but they may become
                 # first and second level headers respectively
                 block_value_lines = block_value.splitlines()
                 if len(block_value_lines) > 1:
-                    block_name = (block_value_lines[-1]).strip().casefold()
+                    raw_block_name = block_value_lines[-1].strip()
+                    block_name = (block_value_lines[-1]).casefold()
                     block_value = ""
                     block_status = BlockStatus.IN_HEADER_BLOCK
                     continue
@@ -219,12 +488,11 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
         if block_status == BlockStatus.IN_PROPERTY_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
                 value = split_list_item(stripped_line)
-                field_list = fields[list_field_key]
+                field_list = parsed[list_field_key]
                 assert isinstance(field_list, list)
                 field_list.append(FieldStr(value))
                 continue
             else:
-                list_field_key = ""
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
 
         if block_status == BlockStatus.IN_PROPERTY_BLOCK:
@@ -233,24 +501,25 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
                 continue
             if ":" not in stripped_line:
                 raise InvalidFileError("Invalid property line %s", stripped_line)
-            key, value = split_property(stripped_line)
+            raw_list_field_key, value = split_property(stripped_line)
             if value == "":
                 block_status = BlockStatus.IN_PROPERTY_LIST
-                list_field_key = key
-                fields[list_field_key] = []
+                list_field_key = raw_list_field_key.casefold()
+                parsed.append_field(raw_list_field_key, [], FIELD_MD_TYPE.LIST_PROPERTY)
             else:
-                fields[key] = typed_field(value)
+                parsed.append_field(
+                    raw_list_field_key, typed_field(value), FIELD_MD_TYPE.PROPERTY
+                )
             continue
 
         if block_status == BlockStatus.IN_HEADER_LIST:
             if stripped_line[0] == "-" and stripped_line != "---":
                 value = split_list_item(stripped_line)
-                field_list = fields[list_field_key]
+                field_list = parsed[list_field_key]
                 assert isinstance(field_list, list)
                 field_list.append(FieldStr(value))
                 continue
             else:
-                list_field_key = ""
                 block_name = None
                 block_status = BlockStatus.IN_HEADER_BLOCK
 
@@ -264,35 +533,50 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
             if stripped_line == "---":
                 block_status = BlockStatus.IN_PROPERTY_BLOCK
                 if block_name is not None:
-                    fields[block_name] = typed_field(block_value)
+                    parsed.append_field(
+                        raw_block_name,
+                        FieldStr(block_value.strip()),
+                        FIELD_MD_TYPE.BLOCK,
+                    )
                 block_value = ""
                 continue
-            elif len(stripped_line) >= 4 and (
-                stripped_line[0:4] == "====" or stripped_line[0:4] == "----"
-            ):
+            elif stripped_line.startswith("====") or stripped_line.startswith("----"):
                 # Currently, ==== and ---- are conflated, but they may become
                 # first and second level headers respectively
                 block_value_lines = block_value.splitlines()
                 if block_name is not None:
                     if len(block_value_lines) > 1:
-                        fields[block_name] = typed_field(
-                            "\n".join(block_value_lines[0:-1]).strip()
+                        parsed.append_field(
+                            raw_block_name,
+                            typed_field("\n".join(block_value_lines[0:-1]).strip()),
+                            FIELD_MD_TYPE.BLOCK,
                         )
                 if len(block_value_lines) > 1:
-                    block_name = (block_value_lines[-1]).strip().casefold()
+                    raw_block_name = (block_value_lines[-1]).strip()
+                    block_name = raw_block_name.casefold()
                 block_value = ""
             elif stripped_line[0] == "#":
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 if block_name is not None:
-                    fields[block_name] = typed_field(block_value.strip())
-                block_name = get_block_name(stripped_line)
+                    parsed.append_field(
+                        raw_block_name,
+                        typed_field(block_value.strip()),
+                        FIELD_MD_TYPE.BLOCK,
+                    )
+                raw_block_name = get_raw_block_name(stripped_line)
+                block_name = raw_block_name.casefold()
                 block_value = ""
                 continue
             elif stripped_line[0] == "-" and block_value.strip() == "":
                 block_status = BlockStatus.IN_HEADER_LIST
                 if block_name is not None:
-                    list_field_key = block_name
-                fields[list_field_key] = [FieldStr(split_list_item(stripped_line))]
+                    raw_block_name = block_name
+                    list_field_key = block_name.casefold()
+                parsed.append_field(
+                    raw_block_name,
+                    [FieldStr(split_list_item(stripped_line))],
+                    FIELD_MD_TYPE.PROPERTY,
+                )
             elif "```" in stripped_line:
                 block_status = BlockStatus.IN_CODE_BLOCK
                 block_value += line + "\n"
@@ -301,12 +585,14 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
 
     if block_status == BlockStatus.IN_HEADER_BLOCK:
         if block_name is not None:
-            fields[block_name] = FieldStr(block_value.strip())
+            parsed.append_field(
+                raw_block_name, FieldStr(block_value.strip()), FIELD_MD_TYPE.BLOCK
+            )
 
-    if config.allow_header_summary and "summary" not in fields:
+    if config.allow_header_summary and "summary" not in parsed:
         possible_headers: list[str] = [
             key
-            for key, value in fields.items()
+            for key, value in parsed.items()
             if value == None or (isinstance(value, FieldStr) and len(value) == 0)
         ]
         if len(possible_headers) == 1:
@@ -317,8 +603,16 @@ def extract_fields(config: ScrumConfig, md_file: str) -> dict[str, Field]:
             # the algorithm proper
             for line in md_file.splitlines():
                 if line.casefold().strip() == header_key:
-                    fields["summary"] = FieldStr(line.strip())
+                    previous_position = parsed.order().index(header_key)
+                    parsed.insert_field(
+                        "Summary",
+                        FieldStr(line.strip()),
+                        FIELD_MD_TYPE.IMPLICIT_SUMMARY,
+                        previous_position,
+                    )
+                    parsed.remove_field(header_key)
+                    break
         else:
             raise InvalidFileError("No clear summary field")
 
-    return fields
+    return parsed
