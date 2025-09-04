@@ -8,7 +8,7 @@ import pathlib
 from typing import Optional
 from scrummd.card import Card, from_str
 import logging
-from scrummd.config import ScrumConfig
+from scrummd.config import CollectionConfig, ScrumConfig
 from scrummd.exceptions import ValidationError, DuplicateIndexError
 from scrummd.source_md import Field, FieldNumber, FieldStr, typed_field
 
@@ -188,6 +188,9 @@ def get_collection(
             continue
         for _, card in collection.items():
             try:
+                # Ensure typechecking is satisfied
+                # Should be changed when CollectionConfig has it's raw version removed
+                assert isinstance(collection_config, CollectionConfig)
                 card.assert_valid_rules(collection_config)
             except ValidationError as ex:
                 if config.strict:
