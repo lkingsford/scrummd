@@ -37,7 +37,9 @@ rather than relying on the output of the CLI commands.
    commands/commands 
    card
    configuration
+   output_template_guide
    source/scrummd
+   source/modules
    semver
 
 Indices and tables

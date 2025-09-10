@@ -1,0 +1,24 @@
+{% macro card_ref(card) -%}
+    {{ card.index }} ({{ card.status }})
+{%- endmacro %}
+---
+{{ card.index }}: {{ card.summary | expand_refs(card_ref) }}
+---
+{% for key, value in card.udf.items() %}
+{% if value is none %}
+{% elif value is string %}
+{% if "\n" in value %}
+# {{ key }}
+{{ value  | expand_refs(value, card_ref)}}
+
+{% else %}
+{{ key }}: {{ value }}
+{% endif %}
+{% elif value is number %}
+{{ key }}: {{ "%.2f"|format(value) }}
+{% elif value is list %}
+{% for item in value %}
+- {{ item }}
+{% endfor %}
+{% endif %}
+{% endfor %}
