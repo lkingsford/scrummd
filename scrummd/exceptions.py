@@ -49,3 +49,11 @@ class ImplicitChangeOfTypeError(ValidationError):
 
 class UnsupportedModificationError(ValidationError):
     """Called when a field can't be modified."""
+
+
+class TemplateNotFoundError(FileNotFoundError):
+    """Called when a template file can't be found."""
+
+    def __init__(self, filename, searched_paths):
+        self.searched_paths = searched_paths
+        super().__init__(f"Template {filename} not found in {searched_paths} or module")
