@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from scrummd.exceptions import (
     InvalidFileError,
     InvalidRestrictedFieldValueError,
@@ -8,6 +8,7 @@ from scrummd.exceptions import (
 )
 from scrummd.config import ScrumConfig, CollectionConfig
 from scrummd.source_md import (
+    CardComponent,
     FieldStr,
     extract_collection,
     extract_fields,

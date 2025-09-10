@@ -5,6 +5,7 @@ from scrummd.collection import get_collection
 
 from scrummd.config import ScrumConfig
 from scrummd.scard import output_cards
+from scrummd.formatter import load_template
 
 
 @pytest.fixture(scope="session")
@@ -23,4 +24,9 @@ def test_scard(scrumcli_config):
     """Calls scard's output function for each card in the project"""
     backlog = get_collection(scrumcli_config)
     for index, _card in backlog.items():
-        output_cards(scrumcli_config, backlog, index)
+        output_cards(
+            scrumcli_config,
+            load_template("default_scard.j2", scrumcli_config),
+            backlog,
+            index,
+        )
