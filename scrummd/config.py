@@ -42,8 +42,8 @@ class SboardConfig:
 class ScardConfig:
     """Configuration specific to scard"""
 
-    reference_format: str = "[$index]"
-    """Fields to show when a card is referenced in a field in `scard`"""
+    default_template: Optional[str] = const.DEFAULT_SCARD_TEMPLATE
+    """Default jinja2 template to use for scard output"""
 
 
 RawCollectionConfig = CollectionConfig | dict[str, list[str] | str]
@@ -61,9 +61,6 @@ class ScrumConfig(CollectionConfig):
 
     collections: dict[str, RawCollectionConfig] = field(default_factory=dict)
     """Embedded collection config"""
-    # The RawCollectionConfig is used here to enable reading from the file straight into this with
-    # minimal manual code, but beginning to face issues proving typing/correctness.
-    # Will limit to CollectionConfig in the future.
 
     scard: ScardConfig = field(default_factory=ScardConfig)
 
