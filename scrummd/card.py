@@ -16,7 +16,7 @@ from scrummd.source_md import (
 )
 
 if TYPE_CHECKING:
-    import scrummd.collection
+    from scrummd.collection import Collection
 
 
 @dataclass
@@ -68,10 +68,15 @@ class Card:
 
         raise NotImplementedError("%f not yet available for output", [field_name])
 
-    def enrich(self, collection: scrummd.Collection):
+    def enrich_fields(self, collection: Collection) -> None:
+        """Enrich the fields referring to other cards with the cards themselves
 
-        self.collections = extract_collection(collection, self.parsed_md)
-        self.defined_collections = extract_fields(collection, self.parsed_md)
+        Args:
+            collection (Collection): Collection to enrich with
+
+        Returns:
+            None
+        """
 
     def assert_valid_rules(self, config: CollectionConfig) -> None:
         """Raise an error if a card doesn't comply with an active configuration
