@@ -3,8 +3,9 @@ import re
 
 from copy import deepcopy
 from enum import Enum
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from collections.abc import ItemsView, KeysView
+import logging
 
 from scrummd.config import ScrumConfig
 from scrummd.exceptions import (
@@ -12,6 +13,12 @@ from scrummd.exceptions import (
     ImplicitChangeOfTypeError,
     UnsupportedModificationError,
 )
+
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from scrummd.card import Card
+    from scrummd.collection import Collection
 
 
 class FIELD_MD_TYPE(Enum):
@@ -33,10 +40,14 @@ class CardComponent(FieldComponent):
     """A component of the field that refers to a card"""
 
     cardIndex: str
+    """The index of the card"""
 
+    card: Optional["Card"] = None
+    """The referred to card"""
 
-class EnrichedCardComponent(FieldComponent):
-    """A component of the field that refers to a card which has been enriched with the referring card"""
+    def __post_init__(self):
+        if self.card == None:
+            logger.warning(f"Card index {self.cardIndex} referred to but not found.")
 
 
 @dataclass
@@ -62,7 +73,7 @@ class FieldStr(str):
         super().__init__()
         self._components = None
 
-    def components(self) -> list[FieldComponent]:
+    def components(self, collection: "Collection") -> list[FieldComponent]:
         """Break the field string into its components. This can be used for when the card is outputted to - for instance - format the strings.
 
         Returns:
@@ -79,7 +90,9 @@ class FieldStr(str):
             if match.start() != cursor:
                 self._components.append(StringComponent(self[cursor : match.start()]))
 
-            self._components.append(CardComponent(match.group(1)))
+            self._components.append(
+                CardComponent(match.group(1), collection.get(match.group(1)))
+            )
             cursor = match.end()
         if cursor != len(self):
             self._components.append(StringComponent(self[cursor:]))

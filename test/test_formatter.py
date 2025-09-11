@@ -41,5 +41,7 @@ Field [c1 Bob Ready]
     card = scrummd.card.from_str(
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
-    card.enrich(test_collection)
-    assert scrummd.formatter.format(basic_reference_template, card) == expected_result
+    assert (
+        scrummd.formatter.format(basic_reference_template, card, test_collection)
+        == expected_result
+    )

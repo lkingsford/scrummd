@@ -8,15 +8,13 @@ from scrummd.exceptions import (
 )
 from scrummd.config import ScrumConfig, CollectionConfig
 from scrummd.source_md import (
+    CardComponent,
     FieldStr,
     extract_collection,
     extract_fields,
     Field,
     ParsedMd,
 )
-
-if TYPE_CHECKING:
-    from scrummd.collection import Collection
 
 
 @dataclass
@@ -67,16 +65,6 @@ class Card:
             return FieldStr(self.path)
 
         raise NotImplementedError("%f not yet available for output", [field_name])
-
-    def enrich_fields(self, collection: Collection) -> None:
-        """Enrich the fields referring to other cards with the cards themselves
-
-        Args:
-            collection (Collection): Collection to enrich with
-
-        Returns:
-            None
-        """
 
     def assert_valid_rules(self, config: CollectionConfig) -> None:
         """Raise an error if a card doesn't comply with an active configuration

@@ -1,17 +1,15 @@
 """Tools for formatting a card to output"""
 
+from typing import TYPE_CHECKING
 import jinja2
 
-from scrummd.scard import Card
-from scrummd.scard import CardComponent
-from scrummd.scard import Field
-from scrummd.scard import FieldStr
-from scrummd.scard import FieldNumber
-from scrummd.scard import StringComponent
-from scrummd.scard import Collection
+
+if TYPE_CHECKING:
+    from scrummd.card import Card
+    from scrummd.scard import Collection
 
 
-def format(formatter: str, card: Card) -> str:
+def format(formatter: str, card: "Card", collection: "Collection") -> str:
     """Format a card per the given template
 
     Args:
@@ -22,3 +20,4 @@ def format(formatter: str, card: Card) -> str:
         str: Card formatted per template
     """
     template = jinja2.Template(formatter)
+    return template.render(card=card)
