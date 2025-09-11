@@ -217,8 +217,8 @@ See the :doc:`output_template_guide` for formatting the template.
 The search path priorities are as follows:
 
 -   the current working directory;
--   the ``templates`` directory in the ``scrum_path``
 -   the ``.templates`` directory in the ``scrum_path``
+-   the ``templates`` directory in the ``scrum_path``
 -   ``templates`` in the scrummd package;
 
 

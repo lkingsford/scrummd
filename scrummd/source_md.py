@@ -35,6 +35,10 @@ class CardComponent(FieldComponent):
     cardIndex: str
 
 
+class EnrichedCardComponent(FieldComponent):
+    """A component of the field that refers to a card which has been enriched with the referring card"""
+
+
 @dataclass
 class StringComponent(FieldComponent):
     """A component of the field that is just a string"""

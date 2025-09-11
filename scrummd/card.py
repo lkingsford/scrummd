@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from scrummd.exceptions import (
     InvalidFileError,
     InvalidRestrictedFieldValueError,
@@ -14,6 +14,9 @@ from scrummd.source_md import (
     Field,
     ParsedMd,
 )
+
+if TYPE_CHECKING:
+    import scrummd.collection
 
 
 @dataclass
@@ -64,6 +67,11 @@ class Card:
             return FieldStr(self.path)
 
         raise NotImplementedError("%f not yet available for output", [field_name])
+
+    def enrich(self, collection: scrummd.Collection):
+
+        self.collections = extract_collection(collection, self.parsed_md)
+        self.defined_collections = extract_fields(collection, self.parsed_md)
 
     def assert_valid_rules(self, config: CollectionConfig) -> None:
         """Raise an error if a card doesn't comply with an active configuration
