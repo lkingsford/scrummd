@@ -5,31 +5,32 @@ from fixtures import data_config, test_collection
 
 
 def test_basic_formatting(data_config, test_collection):
-    card = scrummd.card.Card.from_str(
+    card = scrummd.card.from_str(
         data_config,
         "---\nsummary: test\n---\n",
         "collection",
         Path("collection/test.md"),
     )
-    assert scrummd.formatter.format("summary: $summary", card) == "summary: test"
+    assert (
+        scrummd.formatter.format("summary: {{ card.summary }}", card, {})
+        == "summary: test"
+    )
 
 
 def test_format_with_card_reference(data_config, test_collection):
     basic_reference_template = """{% macro card_ref(card) -%}
-    {{ card.index }} {{ card.assignee }} {{ card.status }})
+    [{{ card.index }} {{ card.udf["assignee"] }} {{ card.udf["status"] }}]
 {%- endmacro %}
-{{ summary | expand_refs(card_ref) }}
-{{ udf["key"] | expand_refs(card_ref) }}
-{{ udf["key2"] | expand_refs(card_ref) }}
-{{ udf["key3"] | expand_refs(card_ref) }}
-"""
+{{- card.summary | expand_field_str(cards, card_ref) }}
+{{ card.udf["key"] | expand_field_str(cards, card_ref) }}
+{{ card.udf["key 2"] | expand_field_str(cards, card_ref) }}
+{{ card.udf["key 3"] | expand_field_str(cards, card_ref) }}"""
 
-    test_card = """
-    ---
-    summary: Test Card
-    key: Field [[c1]]
-    key 2: [[c2]][[c3]]
-    key 3: [[!c2]][[c3]]
+    test_card = """ ---
+summary: Test Card
+key: Field [[c1]]
+key 2: [[c2]][[c3]]
+key 3: [[!c2]][[c3]]
     ---
     """
 
@@ -41,7 +42,7 @@ Field [c1 Bob Ready]
     card = scrummd.card.from_str(
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
-    assert (
-        scrummd.formatter.format(basic_reference_template, card, test_collection)
-        == expected_result
-    )
+    # assert (
+    result = scrummd.formatter.format(basic_reference_template, card, test_collection)
+    assert result == expected_result
+    # )
