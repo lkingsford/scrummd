@@ -4,6 +4,7 @@ import argparse
 import logging
 import re
 from typing import Optional
+import jinja2
 from scrummd import formatter
 from scrummd.card import Card
 from scrummd.collection import Collection, get_collection
@@ -20,34 +21,17 @@ from scrummd.version import version_to_output
 
 logger = logging.getLogger(__name__)
 
-_field_re = re.compile(r"\$(\w+)")
+
+def format_field(field):
+    raise NotImplemented("Unimplemented whilst moving to Jinja")
 
 
-def format_field(value: Optional[Field]) -> str:
-    """Format a given field for output
-
-    Args:
-        value (Optional[Field]): Field to output
-
-    Raises:
-        TypeError: Field is not a recognised formattable type
-
-    Returns:
-        str: Field suitable to use in output
-    """
-    if value is None:
-        return ""
-    if isinstance(value, FieldStr):
-        return value
-    if isinstance(value, list):
-        return f"[{', '.join(value)}]"
-    if isinstance(value, FieldNumber):
-        return f"{value:g}"
-    else:
-        raise TypeError(f"Unsupported type {type(value)}")
-
-
-def output_cards(config: ScrumConfig, collection: Collection, card_indexes: list[str]):
+def output_cards(
+    config: ScrumConfig,
+    template: jinja2.Template,
+    collection: Collection,
+    card_indexes: list[str],
+):
     """Output cards to stdout
 
     Args:
@@ -78,6 +62,9 @@ def create_parser() -> argparse.ArgumentParser:
         action="version",
         version=version_to_output(),
     )
+    parser.add_argument(
+        "-t", "--template", help="Template file to use", default="default_scard.j2"
+    )
     parser.description = __doc__
     return parser
 
@@ -85,12 +72,11 @@ def create_parser() -> argparse.ArgumentParser:
 def entry():
     """Entry point for scard"""
     args = create_parser().parse_args()
-
     config = load_fs_config()
-
     collection = get_collection(config)
+    template = formatter.load_template(args.template, config)
 
-    output_cards(config, collection, args.card)
+    output_cards(config, template, collection, args.card)
 
 
 if __name__ == "__main__":

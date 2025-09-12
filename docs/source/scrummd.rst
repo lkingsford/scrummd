@@ -107,17 +107,6 @@ scrummd.swrite module
    :undoc-members:
    :show-inheritance:
 
-
-scrummd.template module
------------------------
-.. automodule:: scrummd.template
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-
-
 Module contents
 ---------------
 
