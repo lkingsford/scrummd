@@ -51,6 +51,14 @@ scrummd.exceptions module
    :members:
    :undoc-members:
    :show-inheritance:
+   
+scrummd.formatter module
+------------------------
+
+.. automodule:: scrummd.formatter
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 scrummd.sbench module
 ---------------------
@@ -98,6 +106,16 @@ scrummd.swrite module
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+scrummd.template module
+-----------------------
+.. automodule:: scrummd.template
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 
 
 Module contents
