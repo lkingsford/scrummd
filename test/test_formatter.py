@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 import scrummd.card
 import scrummd.formatter
 from fixtures import data_config, test_collection
@@ -17,7 +18,28 @@ def test_basic_formatting(data_config, test_collection):
     )
 
 
-def test_format_with_card_reference(data_config, test_collection):
+@pytest.mark.parametrize(
+    "input, expected_result",
+    (
+        pytest.param("Field [[c1]]", "Field [c1 Bob Ready]", id="string_and_reference"),
+        pytest.param(
+            "[[c2]][[c3]]",
+            "[c2 Mary ready][c3 Bob Done]",
+            id="card_reference_with_two_cards",
+        ),
+        pytest.param(
+            "[[!c2]][[c3]]",
+            "[c2 Mary ready][c3 Bob Done]",
+            id="card_reference_with_negation",
+        ),
+        pytest.param(
+            "[[zz01]]", "[zz01 (MISSING)]", id="card_reference_with_missing_card"
+        ),
+    ),
+)
+def test_format_with_card_reference(
+    data_config, test_collection, input, expected_result
+):
     basic_reference_template = """{% macro card_ref(component) -%}
     {%- if component.card is not none -%}
         [{{ component.card.index }} {{ component.card.udf["assignee"] }} {{ component.card.udf["status"] }}]
@@ -25,34 +47,19 @@ def test_format_with_card_reference(data_config, test_collection):
         [{{ component.card_index }} (MISSING)]
     {%- endif %}
 {%- endmacro %}
-{{- card.summary | expand_field_str(cards, card_ref) }}
-{{ card.udf["key"] | expand_field_str(cards, card_ref) }}
-{{ card.udf["key 2"] | expand_field_str(cards, card_ref) }}
-{{ card.udf["key 3"] | expand_field_str(cards, card_ref) }}
-{{ card.udf["key 4"] | expand_field_str(cards, card_ref) }}"""
+{{- card.udf["key"] | expand_field_str(cards, card_ref) }}"""
 
-    test_card = """ ---
+    test_card = f""" ---
 summary: Test Card
-key: Field [[c1]]
-key 2: [[c2]][[c3]]
-key 3: [[!c2]][[c3]]
-key 4: [[zz01]]
+key: { input }
     ---
     """
-
-    expected_result = """Test Card
-Field [c1 Bob Ready]
-[c2 Mary ready][c3 Bob Done]
-[c2 Mary ready][c3 Bob Done]
-[zz01 (MISSING)]"""
 
     card = scrummd.card.from_str(
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
-    # assert (
     result = scrummd.formatter.format(basic_reference_template, card, test_collection)
     assert result == expected_result
-    # )
 
 
 def test_format_card_reference_no_formatter(data_config, test_collection):
@@ -65,4 +72,4 @@ key: Field [[c2]]
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
     result = scrummd.formatter.format(template, card, test_collection)
-    assert result == "[[ c2 ]]"
+    assert result == "Field [[ c2 ]]"
