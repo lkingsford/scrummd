@@ -1,6 +1,7 @@
 """Tools for formatting a card to output"""
 
-from typing import TYPE_CHECKING, Callable, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Callable, Optional
 import jinja2
 
 from scrummd.source_md import FieldStr, CardComponent, StringComponent
@@ -14,22 +15,28 @@ env = jinja2.Environment()
 
 
 def _expand_field_str(
-    field: FieldStr, cards: "Collection", format_macro: Callable
+    field: FieldStr,
+    cards: "Collection",
+    format_macro: Optional[Callable] = None,
 ) -> str:
     """Format any card references in a field str with the template
 
     Args:
         field (Field): Field to expand
-        format_macro (Callable): Macro defined in template
+        cards (Collection): Collection of cards
+        format_macro (Callable): Macro defined in template for formatting card references. Defaults to [[ {card.index} ]].
 
     Returns:
         str: Field with references formatted by template
     """
 
+    # Default to "[[ index ]]" if no macro provided
+    format_macro = format_macro or (lambda component: f"[[ {component.card.index} ]]")
+
     response = ""
     for component in field.components(cards):
         if isinstance(component, CardComponent):
-            response += format_macro(card=component.card)
+            response += format_macro(component=component)
         else:
             assert isinstance(component, StringComponent)
             response += component.value

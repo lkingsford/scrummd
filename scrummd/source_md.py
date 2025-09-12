@@ -39,7 +39,7 @@ class FieldComponent:
 class CardComponent(FieldComponent):
     """A component of the field that refers to a card"""
 
-    cardIndex: str
+    card_index: str
     """The index of the card"""
 
     card: Optional["Card"] = None
@@ -47,7 +47,7 @@ class CardComponent(FieldComponent):
 
     def __post_init__(self):
         if self.card == None:
-            logger.warning(f"Card index {self.cardIndex} referred to but not found.")
+            logger.warning(f"Card index {self.card_index} referred to but not found.")
 
 
 @dataclass
