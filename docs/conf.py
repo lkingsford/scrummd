@@ -9,7 +9,7 @@ from scrummd import _version
 
 
 project = "ScrumMD"
-copyright = "2024, Lachlan Kingsford"
+copyright = "2025, Lachlan Kingsford"
 author = "Lachlan Kingsford"
 version = _version.version
 
