@@ -109,25 +109,33 @@ def _is_interactive() -> bool:
     return sys.stdout.isatty()
 
 
+@dataclass(frozen=True)
+class TemplateFields:
+    """Fields to pass to the template"""
+
+    config: scrummd.config.ScrumConfig
+    """The relevant ScrumMD config."""
+
+    card: "Card"
+    """The card being formatted."""
+
+    cards: "Collection"
+    """The full collection of cards."""
+
+    interactive: bool
+    """Whether the command is being run in an interactive terminal."""
+
+
 def _template_fields(
     config: scrummd.config.ScrumConfig, card: "Card", cards: "Collection"
-) -> dict[str, Any]:
-    """Fields to pass to the template
-
-    Args:
-        config (scrummd.config.ScrumConfig): ScrumMD Config
-        card (Card): Card that will be displayed
-        cards (Collection): Collection of cards
-
-    Returns:
-        dict[str, any]: Dictionary of fields to be accessible in the template
-    """
-    return {
-        "config": config,
-        "card": card,
-        "cards": cards,
-        "interactive": _is_interactive(),
-    }
+) -> TemplateFields:
+    """Fields to pass to the template"""
+    return TemplateFields(
+        config=config,
+        card=card,
+        cards=cards,
+        interactive=_is_interactive(),
+    )
 
 
 def format(
@@ -148,7 +156,7 @@ def format(
         str: Card formatted per template
     """
     template = load_template(template_filename, config)
-    return template.render(**_template_fields(config, card, collection))
+    return template.render(**_template_fields(config, card, collection).__dict__)
 
 
 def format_from_str(
@@ -169,4 +177,6 @@ def format_from_str(
         str: Card formatted per template
     """
     compiled_template = env.from_string(template)
-    return compiled_template.render(**_template_fields(config, card, collection))
+    return compiled_template.render(
+        **_template_fields(config, card, collection).__dict__
+    )
