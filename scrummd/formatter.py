@@ -2,7 +2,7 @@
 
 import pathlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, Any
 import jinja2
 from importlib import resources
 
@@ -97,6 +97,26 @@ def _expand_field_str(
 env.filters["expand_field_str"] = _expand_field_str
 
 
+def _template_fields(
+    config: scrummd.config.ScrumConfig, card: "Card", cards: "Collection"
+) -> dict[str, Any]:
+    """Fields to pass to the template
+
+    Args:
+        config (scrummd.config.ScrumConfig): ScrumMD Config
+        card (Card): Card that will be displayed
+        cards (Collection): Collection of cards
+
+    Returns:
+        dict[str, any]: Dictionary of fields to be accessible in the template
+    """
+    return {
+        "config": config,
+        "card": card,
+        "cards": cards,
+    }
+
+
 def format(
     config: scrummd.config.ScrumConfig,
     template_filename: str,
@@ -115,10 +135,11 @@ def format(
         str: Card formatted per template
     """
     template = load_template(template_filename, config)
-    return template.render(card=card, cards=collection)
+    return template.render(**_template_fields(config, card, collection))
 
 
 def format_from_str(
+    config: scrummd.config.ScrumConfig,
     template: str,
     card: "Card",
     collection: "Collection",
@@ -126,6 +147,7 @@ def format_from_str(
     """Format a card with the provided template.
 
     Args:
+        config (scrummd.config.ScrumConfig): Scrum Config
         template (str): Template to use
         card (Card): Card to format
         collection (Collection): Collection of cards
@@ -134,4 +156,4 @@ def format_from_str(
         str: Card formatted per template
     """
     compiled_template = env.from_string(template)
-    return compiled_template.render(card=card, cards=collection)
+    return compiled_template.render(**_template_fields(config, card, collection))

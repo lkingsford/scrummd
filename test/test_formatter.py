@@ -13,7 +13,9 @@ def test_basic_formatting(data_config, test_collection):
         Path("collection/test.md"),
     )
     assert (
-        scrummd.formatter.format_from_str("summary: {{ card.summary }}", card, {})
+        scrummd.formatter.format_from_str(
+            data_config, "summary: {{ card.summary }}", card, {}
+        )
         == "summary: test"
     )
 
@@ -59,7 +61,7 @@ key: { input }
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
     result = scrummd.formatter.format_from_str(
-        basic_reference_template, card, test_collection
+        data_config, basic_reference_template, card, test_collection
     )
     assert result == expected_result
 
@@ -73,5 +75,7 @@ key: Field [[c2]]
     card = scrummd.card.from_str(
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
-    result = scrummd.formatter.format_from_str(template, card, test_collection)
+    result = scrummd.formatter.format_from_str(
+        data_config, template, card, test_collection
+    )
     assert result == "Field [[ c2 ]]"
