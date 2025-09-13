@@ -13,7 +13,9 @@ def test_basic_formatting(data_config, test_collection):
         Path("collection/test.md"),
     )
     assert (
-        scrummd.formatter.format_from_str("summary: {{ card.summary }}", card, {})
+        scrummd.formatter.format_from_str(
+            data_config, "summary: {{ card.summary }}", card, {}
+        )
         == "summary: test"
     )
 
@@ -47,7 +49,7 @@ def test_format_with_card_reference(
         [{{ component.card_index }} (MISSING)]
     {%- endif %}
 {%- endmacro %}
-{{- card.udf["key"] | expand_field_str(cards, card_ref) }}"""
+{{- card.udf["key"] | apply_field_macros() }}"""
 
     test_card = f""" ---
 summary: Test Card
@@ -59,13 +61,13 @@ key: { input }
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
     result = scrummd.formatter.format_from_str(
-        basic_reference_template, card, test_collection
+        data_config, basic_reference_template, card, test_collection
     )
     assert result == expected_result
 
 
 def test_format_card_reference_no_formatter(data_config, test_collection):
-    template = """{{ card.udf["key"] | expand_field_str(cards) }}"""
+    template = """{{ card.udf["key"] | apply_field_macros() }}"""
     test_card = """ ---
 summary: Test Card
 key: Field [[c2]]
@@ -73,5 +75,7 @@ key: Field [[c2]]
     card = scrummd.card.from_str(
         data_config, test_card, "collection", Path("collection/card_ref.md")
     )
-    result = scrummd.formatter.format_from_str(template, card, test_collection)
+    result = scrummd.formatter.format_from_str(
+        data_config, template, card, test_collection
+    )
     assert result == "Field [[ c2 ]]"
