@@ -1,24 +1,25 @@
 {% macro card_ref(card) -%}
     {{ card.index }} ({{ card.status }})
-{%- endmacro %}
+{%- endmacro -%}
 ---
 {{ card.index }}: {{ card.summary | expand_field_str(card_ref) }}
 ---
-{% for key, value in card.udf.items() %}
-{% if value is none %}
-{% elif value is string %}
-{% if "\n" in value %}
-# {{ key }}
-{{ value  | expand_field_str(value, card_ref)}}
+{% for key, value in card.udf.items() -%}
+    {% if value is none -%}
+    {% elif value is string -%}
+        {% if "\n" in value %}
 
-{% else %}
+# {{ key }}
+
+{{ value | expand_field_str(value, card_ref) }}
+        {%- else %}
 {{ key }}: {{ value }}
-{% endif %}
-{% elif value is number %}
+        {%- endif -%}
+    {%- elif value is number -%}
 {{ key }}: {{ "%.2f"|format(value) }}
-{% elif value is list %}
-{% for item in value %}
+    {%- elif value is list -%}
+        {% for item in value %}
 - {{ item }}
-{% endfor %}
-{% endif %}
+        {% endfor %}
+    {% endif %}
 {% endfor %}
