@@ -42,9 +42,6 @@ strict = true
 [tool.scrummd.sboard]
 default_group_by = ["status"]
 
-[tool.scrummd.scard]
-reference_format = "$index [$status]"
-
 [tool.scrummd.fields]
 status = [
     "Not Fully Defined",

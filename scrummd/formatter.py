@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 env = jinja2.Environment()
 
+_compiled_templates: dict[str, jinja2.Template] = {}
+
 
 def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.Template:
     """Load the template (using path rules) from the filename.
@@ -35,6 +37,10 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
     Returns:
         jinja2.Template: Compiled Jinja2 Template
     """
+
+    if filename in _compiled_templates:
+        return _compiled_templates[filename]
+
     scrum_path = pathlib.Path(config.scrum_path)
     paths: list[pathlib.Path] = [
         pathlib.Path(filename),
@@ -91,15 +97,41 @@ def _expand_field_str(
 env.filters["expand_field_str"] = _expand_field_str
 
 
-def format(formatter: str, card: "Card", collection: "Collection") -> str:
-    """Format a card per the given template
+def format(
+    config: scrummd.config.ScrumConfig,
+    template_filename: str,
+    card: "Card",
+    collection: "Collection",
+) -> str:
+    """Format the card with the named template.
 
     Args:
-        formatter (str): Template to use
+        config (scrummd.config.ScrumConfig): Scrum Config
+        template_filename (str): Name of template
         card (Card): Card to format
+        collection (Collection): Collection of cards
 
     Returns:
         str: Card formatted per template
     """
-    template = env.from_string(formatter)
+    template = load_template(template_filename, config)
     return template.render(card=card, cards=collection)
+
+
+def format_from_str(
+    template: str,
+    card: "Card",
+    collection: "Collection",
+) -> str:
+    """Format a card with the provided template.
+
+    Args:
+        template (str): Template to use
+        card (Card): Card to format
+        collection (Collection): Collection of cards
+
+    Returns:
+        str: Card formatted per template
+    """
+    compiled_template = env.from_string(template)
+    return compiled_template.render(card=card, cards=collection)

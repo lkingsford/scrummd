@@ -2,21 +2,11 @@
 
 import argparse
 import logging
-import re
-from typing import Optional
-import jinja2
 from scrummd import formatter
 from scrummd.card import Card
 from scrummd.collection import Collection, get_collection
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
-from scrummd.source_md import (
-    CardComponent,
-    Field,
-    FieldNumber,
-    FieldStr,
-    StringComponent,
-)
 from scrummd.version import version_to_output
 
 logger = logging.getLogger(__name__)
@@ -28,7 +18,7 @@ def format_field(field):
 
 def output_cards(
     config: ScrumConfig,
-    template: jinja2.Template,
+    template: str,
     collection: Collection,
     card_indexes: list[str],
 ):
@@ -45,8 +35,7 @@ def output_cards(
             logger.error("Card %s not found", card_index)
             continue
         card = collection[card_index]
-        assert config.scard.default_template
-        print(formatter.format(config.scard.default_template, card, collection))
+        print(formatter.format(config, template, card, collection))
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -74,10 +63,9 @@ def entry():
     args = create_parser().parse_args()
     config = load_fs_config()
     collection = get_collection(config)
-    template = formatter.load_template(args.template, config)
 
-    output_cards(config, template, collection, args.card)
+    output_cards(config, args.template, collection, args.card)
 
 
 if __name__ == "__main__":
-    pass
+    entry()
