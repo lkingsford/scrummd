@@ -1,10 +1,11 @@
 """Tools for getting templates, and formatting a card with them to output"""
 
 import pathlib
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Optional, Any
-import jinja2
 from importlib import resources
+import jinja2
 
 from scrummd.source_md import FieldStr, CardComponent, StringComponent
 
@@ -97,6 +98,15 @@ def _expand_field_str(
 env.filters["expand_field_str"] = _expand_field_str
 
 
+def _is_interactive() -> bool:
+    """Check if runing in an interactive terminal
+
+    Returns:
+        bool: True if TTD
+    """
+    return sys.stdin.isatty()
+
+
 def _template_fields(
     config: scrummd.config.ScrumConfig, card: "Card", cards: "Collection"
 ) -> dict[str, Any]:
@@ -114,6 +124,7 @@ def _template_fields(
         "config": config,
         "card": card,
         "cards": cards,
+        "interactive": _is_interactive(),
     }
 
 

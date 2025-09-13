@@ -1,22 +1,30 @@
-{% macro card_ref(card) -%}
+{%- macro card_ref(card) -%}
     {{ card.index }} ({{ card.status }})
 {%- endmacro -%}
+{%- if interactive -%}
+    {%- set HEADER = "\033[31m" -%}
+    {%- set TITLE = "\033[96m" -%}
+    {%- set RESET = "\033[0m" -%}
+{%- else -%}
+    {%- set HEADER = "" -%}
+    {%- set TITLE = "" -%}
+    {%- set RESET = "" -%}
+{%- endif -%}
 ---
-{{ card.index }}: {{ card.summary | expand_field_str(card_ref) }}
+{{ TITLE }}{{ card.index }}: {{ card.summary | expand_field_str(card_ref) }}{{ RESET }}
 ---
 {% for key, value in card.udf.items() -%}
     {% if value is none -%}
     {% elif value is string -%}
         {% if "\n" in value %}
-
-# {{ key }}
+{{ HEADER }}# {{ key }}{{ RESET }}
 
 {{ value | expand_field_str(value, card_ref) }}
         {%- else %}
-{{ key }}: {{ value }}
+{{ HEADER }}{{ key }}{{ RESET }}: {{ value }}
         {%- endif -%}
     {%- elif value is number -%}
-{{ key }}: {{ "%.2f"|format(value) }}
+{{ HEADER }}{{ key }}{{ RESET }}: {{ "%.2f"|format(value) }}
     {%- elif value is list -%}
         {% for item in value %}
 - {{ item }}
