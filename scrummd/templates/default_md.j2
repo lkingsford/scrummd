@@ -2,14 +2,14 @@
     {{ card.index }} ({{ card.status }})
 {%- endmacro %}
 ---
-{{ card.index }}: {{ card.summary | expand_field_str(card_ref) }}
+{{ card.index }}: {{ card.summary | expand_field_str() }}
 ---
 {% for key, value in card.udf.items() %}
 {% if value is none %}
 {% elif value is string %}
 {% if "\n" in value %}
 # {{ key }}
-{{ value  | expand_field_str(value, card_ref)}}
+{{ value  | expand_field_str()}}
 
 {% else %}
 {{ key }}: {{ value }}

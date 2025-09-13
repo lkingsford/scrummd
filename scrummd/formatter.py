@@ -1,10 +1,11 @@
 """Tools for getting templates, and formatting a card with them to output"""
 
 import pathlib
+import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Optional
-import jinja2
+from typing import TYPE_CHECKING, Callable, Optional, Any
 from importlib import resources
+import jinja2
 
 from scrummd.source_md import FieldStr, CardComponent, StringComponent
 
@@ -64,10 +65,10 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
     return env.from_string(found_file.read())
 
 
-def _expand_field_str(
+@jinja2.pass_context
+def _apply_field_macros(
+    context: jinja2.runtime.Context,
     field: FieldStr,
-    cards: "Collection",
-    format_macro: Optional[Callable] = None,
 ) -> str:
     """Format any card references in a field str with the template
 
@@ -80,8 +81,10 @@ def _expand_field_str(
         str: Field with references formatted by template
     """
 
-    # Default to "[[ index ]]" if no macro provided
-    format_macro = format_macro or (lambda component: f"[[ {component.card.index} ]]")
+    format_macro = context.get(
+        "card_ref", lambda component: f"[[ {component.card.index} ]]"
+    )
+    cards = context["cards"]
 
     response = ""
     for component in field.components(cards):
@@ -94,7 +97,37 @@ def _expand_field_str(
     return response
 
 
-env.filters["expand_field_str"] = _expand_field_str
+env.filters["apply_field_macros"] = _apply_field_macros
+
+
+def _is_interactive() -> bool:
+    """Check if runing in an interactive terminal
+
+    Returns:
+        bool: True if TTD
+    """
+    return sys.stdout.isatty()
+
+
+def _template_fields(
+    config: scrummd.config.ScrumConfig, card: "Card", cards: "Collection"
+) -> dict[str, Any]:
+    """Fields to pass to the template
+
+    Args:
+        config (scrummd.config.ScrumConfig): ScrumMD Config
+        card (Card): Card that will be displayed
+        cards (Collection): Collection of cards
+
+    Returns:
+        dict[str, any]: Dictionary of fields to be accessible in the template
+    """
+    return {
+        "config": config,
+        "card": card,
+        "cards": cards,
+        "interactive": _is_interactive(),
+    }
 
 
 def format(
@@ -115,10 +148,11 @@ def format(
         str: Card formatted per template
     """
     template = load_template(template_filename, config)
-    return template.render(card=card, cards=collection)
+    return template.render(**_template_fields(config, card, collection))
 
 
 def format_from_str(
+    config: scrummd.config.ScrumConfig,
     template: str,
     card: "Card",
     collection: "Collection",
@@ -126,6 +160,7 @@ def format_from_str(
     """Format a card with the provided template.
 
     Args:
+        config (scrummd.config.ScrumConfig): Scrum Config
         template (str): Template to use
         card (Card): Card to format
         collection (Collection): Collection of cards
@@ -134,4 +169,4 @@ def format_from_str(
         str: Card formatted per template
     """
     compiled_template = env.from_string(template)
-    return compiled_template.render(card=card, cards=collection)
+    return compiled_template.render(**_template_fields(config, card, collection))
