@@ -1,17 +1,41 @@
-{%- macro card_ref(card) -%}
-    {{ card.index }} ({{ card.status }})
-{%- endmacro -%}
 {%- if interactive -%}
-    {%- set HEADER = "\033[31m" -%}
-    {%- set TITLE = "\033[96m" -%}
-    {%- set RESET = "\033[0m" -%}
+    {%- macro md() -%}
+        \x1b[32m{{ caller() }}\x1b[39m
+    {%- endmacro -%}
+    {%- macro bold() -%}
+        \x1b[1m{{ caller() }}\x1b[22m
+    {%- endmacro -%}
+    {%- macro italic() -%}
+        \x1b[3m{{ caller() }}\x1b[23m
+    {%- endmacro -%}
+    {%- macro underline() -%}
+        \x1b[4m{{ caller() }}\x1b[24m
+    {%- endmacro -%}
+    {%- set HEADER = "\x1b[31m" -%}
+    {%- set TITLE = "\x1b[36m" -%}
+    {%- set RESET = "\x1b[0m" -%}
 {%- else -%}
     {%- set HEADER = "" -%}
     {%- set TITLE = "" -%}
     {%- set RESET = "" -%}
+    {%- macro md() -%}
+        {{ caller() }}
+    {%- endmacro -%}
+    {%- macro bold() -%}
+        {{ caller() }}
+    {%- endmacro -%}
+    {%- macro italic() -%}
+        {{ caller() }}
+    {%- endmacro -%}
+    {%- macro underline() -%}
+        {{ caller() }}
+    {%- endmacro -%}
 {%- endif -%}
+{%- macro card_ref(card) -%}
+    {% call bold() %} {{ card.index }} ({{ card.status }}) {% endcall %}
+{%- endmacro -%}
 ---
-{{ TITLE }}{{ card.index }}: {{ card.summary | expand_field_str(card_ref) }}{{ RESET }}
+{{ TITLE }}{{ card.index }}: {{ card.summary | apply_field_macros() }}{{ RESET }}
 ---
 {% for key, value in card.udf.items() -%}
     {% if value is none -%}
@@ -19,7 +43,7 @@
         {% if "\n" in value %}
 {{ HEADER }}# {{ key }}{{ RESET }}
 
-{{ value | expand_field_str(value, card_ref) }}
+{{ value | apply_field_macros() }}
         {%- else %}
 {{ HEADER }}{{ key }}{{ RESET }}: {{ value }}
         {%- endif -%}

@@ -65,10 +65,10 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
     return env.from_string(found_file.read())
 
 
-def _expand_field_str(
+@jinja2.pass_context
+def _apply_field_macros(
+    context: jinja2.runtime.Context,
     field: FieldStr,
-    cards: "Collection",
-    format_macro: Optional[Callable] = None,
 ) -> str:
     """Format any card references in a field str with the template
 
@@ -81,13 +81,19 @@ def _expand_field_str(
         str: Field with references formatted by template
     """
 
-    # Default to "[[ index ]]" if no macro provided
-    format_macro = format_macro or (lambda component: f"[[ {component.card.index} ]]")
+    bold = context.get("bold", lambda s: s())
+    italic = context.get("italic", lambda s: s())
+    underline = context.get("underline", lambda s: s())
+    md = context.get("md", lambda s: s())
+    format_macro = context.get(
+        "card_ref", lambda component: f"[[ {component.card.index} ]]"
+    )
+    cards = context["cards"]
 
     response = ""
     for component in field.components(cards):
         if isinstance(component, CardComponent):
-            response += format_macro(component=component)
+            response += format_macro(card=component.card)
         else:
             assert isinstance(component, StringComponent)
             response += component.value
@@ -95,7 +101,7 @@ def _expand_field_str(
     return response
 
 
-env.filters["expand_field_str"] = _expand_field_str
+env.filters["apply_field_macros"] = _apply_field_macros
 
 
 def _is_interactive() -> bool:
