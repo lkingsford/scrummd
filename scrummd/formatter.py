@@ -81,10 +81,6 @@ def _apply_field_macros(
         str: Field with references formatted by template
     """
 
-    bold = context.get("bold", lambda s: s())
-    italic = context.get("italic", lambda s: s())
-    underline = context.get("underline", lambda s: s())
-    md = context.get("md", lambda s: s())
     format_macro = context.get(
         "card_ref", lambda component: f"[[ {component.card.index} ]]"
     )
@@ -93,7 +89,7 @@ def _apply_field_macros(
     response = ""
     for component in field.components(cards):
         if isinstance(component, CardComponent):
-            response += format_macro(card=component.card)
+            response += format_macro(component=component)
         else:
             assert isinstance(component, StringComponent)
             response += component.value

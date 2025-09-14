@@ -1,38 +1,22 @@
 {%- if interactive -%}
-    {%- macro md() -%}
-        \x1b[32m{{ caller() }}\x1b[39m
-    {%- endmacro -%}
-    {%- macro bold() -%}
-        \x1b[1m{{ caller() }}\x1b[22m
-    {%- endmacro -%}
-    {%- macro italic() -%}
-        \x1b[3m{{ caller() }}\x1b[23m
-    {%- endmacro -%}
-    {%- macro underline() -%}
-        \x1b[4m{{ caller() }}\x1b[24m
-    {%- endmacro -%}
     {%- set HEADER = "\x1b[31m" -%}
     {%- set TITLE = "\x1b[36m" -%}
     {%- set RESET = "\x1b[0m" -%}
+    {%- set BOLD = "\x1b[1m" -%}
+    {%- set MISSING = "\x1b[31;1m" -%}
 {%- else -%}
     {%- set HEADER = "" -%}
     {%- set TITLE = "" -%}
     {%- set RESET = "" -%}
-    {%- macro md() -%}
-        {{ caller() }}
-    {%- endmacro -%}
-    {%- macro bold() -%}
-        {{ caller() }}
-    {%- endmacro -%}
-    {%- macro italic() -%}
-        {{ caller() }}
-    {%- endmacro -%}
-    {%- macro underline() -%}
-        {{ caller() }}
-    {%- endmacro -%}
+    {%- set BOLD = "" -%}
+    {%- set RED = "" -%}
 {%- endif -%}
-{%- macro card_ref(card) -%}
-    {% call bold() %} {{ card.index }} ({{ card.status }}) {% endcall %}
+{%- macro card_ref(component) -%}
+    {%- if component.card is not none -%}
+        {{ BOLD }}[[{{ component.card_index }}]]{{ RESET }}
+    {%- else -%}
+        {{ MISSING }}[[{{ component.card_index }} - MISSING]]{{ RESET }}
+    {%- endif -%}
 {%- endmacro -%}
 ---
 {{ TITLE }}{{ card.index }}: {{ card.summary | apply_field_macros() }}{{ RESET }}
