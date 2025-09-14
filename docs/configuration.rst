@@ -199,6 +199,8 @@ for ``sboard`` to work.
 ``[tools.scrummd.scard]``
 #########################
 
+.. _configuration-scard-default-template:
+
 ``default_template``
 ^^^^^^^^^^^^^^^^^^^^
 
