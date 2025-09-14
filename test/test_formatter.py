@@ -49,7 +49,7 @@ def test_format_with_card_reference(
         [{{ component.card_index }} (MISSING)]
     {%- endif %}
 {%- endmacro %}
-{{- card.udf["key"] | expand_field_str(cards, card_ref) }}"""
+{{- card.udf["key"] | apply_field_macros() }}"""
 
     test_card = f""" ---
 summary: Test Card
@@ -67,7 +67,7 @@ key: { input }
 
 
 def test_format_card_reference_no_formatter(data_config, test_collection):
-    template = """{{ card.udf["key"] | expand_field_str(cards) }}"""
+    template = """{{ card.udf["key"] | apply_field_macros() }}"""
     test_card = """ ---
 summary: Test Card
 key: Field [[c2]]
