@@ -226,7 +226,7 @@ def test_extract_collection(input, expected):
 def test_fieldstr_component(input, expected):
     """Test that the components of a str are properly separated"""
     field = source_md.FieldStr(input)
-    assert field.components() == expected
+    assert field.components({}) == expected
 
 
 def test_modify_property_basic(data_config, md1_fo):

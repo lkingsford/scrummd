@@ -199,8 +199,10 @@ for ``sboard`` to work.
 ``[tools.scrummd.scard]``
 #########################
 
-``reference_format``
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _configuration-scard-default-template:
+
+``default_template``
+^^^^^^^^^^^^^^^^^^^^
 
 Type
 """"
@@ -210,7 +212,17 @@ str
 Description
 """""""""""
 
-Format of ``[[card]]`` fields when shown by ``scard``. Replaces ``$field`` with the field from the card.
+A path of a jinja2 template to use for ``scard`` output.
+
+See the :doc:`output_template_guide` for formatting the template.
+
+The search path priorities are as follows:
+
+-   the current working directory;
+-   the ``.templates`` directory in the ``scrum_path``
+-   the ``templates`` directory in the ``scrum_path``
+-   ``templates`` in the scrummd package;
+
 
 Example configuration file
 ==========================
@@ -233,7 +245,7 @@ Example configuration file
     default_group_by = ["status"]
     
     [tool.scrummd.scard]
-    reference_format = "$index [$status] ($assignee)"
+    default_template = "default_scard.j2"
 
     [tool.scrummd.fields]
     status = ["Not Fully Defined", "Ready", "In Progress", "In Testing", "Done"]

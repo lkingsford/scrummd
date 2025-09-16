@@ -1,0 +1,41 @@
+{%- if interactive -%}
+    {%- set HEADER = "\x1b[31m" -%}
+    {%- set TITLE = "\x1b[36m" -%}
+    {%- set RESET = "\x1b[0m" -%}
+    {%- set BOLD = "\x1b[1m" -%}
+    {%- set MISSING = "\x1b[31;1m" -%}
+{%- else -%}
+    {%- set HEADER = "" -%}
+    {%- set TITLE = "" -%}
+    {%- set RESET = "" -%}
+    {%- set BOLD = "" -%}
+    {%- set RED = "" -%}
+{%- endif -%}
+{%- macro card_ref(component) -%}
+    {%- if component.card is not none -%}
+        {{ BOLD }}[[{{ component.card_index }}]]{{ RESET }}
+    {%- else -%}
+        {{ MISSING }}[[{{ component.card_index }} - MISSING]]{{ RESET }}
+    {%- endif -%}
+{%- endmacro -%}
+---
+{{ TITLE }}{{ card.index }}: {{ card.summary | apply_field_macros() }}{{ RESET }}
+---
+{% for key, value in card.udf.items() -%}
+    {% if value is none -%}
+    {% elif value is string -%}
+        {% if "\n" in value %}
+{{ HEADER }}# {{ key }}{{ RESET }}
+
+{{ value | apply_field_macros() }}
+        {%- else %}
+{{ HEADER }}{{ key }}{{ RESET }}: {{ value }}
+        {%- endif -%}
+    {%- elif value is number -%}
+{{ HEADER }}{{ key }}{{ RESET }}: {{ "%.2f"|format(value) }}
+    {%- elif value is list -%}
+        {% for item in value %}
+- {{ item }}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
