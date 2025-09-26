@@ -67,7 +67,7 @@ _extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
 class FieldStr(str):
     """A str with the extra parsed information from the str"""
 
-    _components: list[FieldComponent]
+    _components: Optional[list[FieldComponent]]
 
     def __init__(self, value):
         super().__init__()
@@ -121,7 +121,10 @@ class FieldMetadata:
     """The physical type of the field, as it appears in the md file"""
 
     raw_field_name: str
-    """The original field name, as it appears in the md file"""
+    """The original field name, as it appears in the md file."""
+
+    header_level: int
+    """The amount of #'s (or lines under) of the header"""
 
 
 class ParsedMd:
@@ -170,6 +173,19 @@ class ParsedMd:
         """
         return self._fields.items()
 
+    def keys_grouped_by_field_md_type(self) -> list[list[str]]:
+        """
+        Field IDs grouped by the blocks of data types in the original source.
+
+        Used for recreating the md file from scratch. Property/Property Lists are included in the
+        same group. It's possible to have multiple groups of the same type of field (for instance -
+        if there's multiple property blocks)
+
+        Returns:
+            list[list[key]]: Ordered groups, with ordered lists of keys.
+        """
+        raise NotImplementedError()
+
     def copy(self) -> "ParsedMd":
         """
         Creates a new ParsedMd with the same fields and metadata.
@@ -189,7 +205,7 @@ class ParsedMd:
         """
         return self._fields.keys()
 
-    def append_field(self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE) -> None:
+    def append_field(self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, header_level: int = 1) -> None:
         """
         Add a field to the field dictionary, storing its location in metadata.
 
@@ -200,11 +216,11 @@ class ParsedMd:
         """
         key = raw_key.casefold()
         self._fields[key] = value
-        self._meta[key] = FieldMetadata(md_type, raw_key)
+        self._meta[key] = FieldMetadata(md_type, raw_key, header_level)
         self._order.append(key)
 
     def insert_field(
-        self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, index: int
+        self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, index: int, header_level: int = 1
     ) -> None:
         """
         Add a field to the field dictionary, storing its location in metadata.
@@ -217,7 +233,7 @@ class ParsedMd:
         """
         key = raw_key.casefold()
         self._fields[key] = value
-        self._meta[key] = FieldMetadata(md_type, raw_key)
+        self._meta[key] = FieldMetadata(md_type, raw_key, header_level)
         self._order.insert(index, key)
 
     def remove_field(self, key: str) -> None:
@@ -289,7 +305,9 @@ class ParsedMd:
                 field = typed_field(stripped)
 
             if key not in self._fields:
-                logical_type = FieldMetadata(_logical_type(config, key, field), raw_key)
+                # Forcing header_level to 1 until (if) adding a header level for new fields is
+                # added as a feature.
+                logical_type = FieldMetadata(_logical_type(config, key, field), raw_key, header_level=1)
                 new_md._meta[key] = logical_type
                 if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
                     new_md._order.insert(0, key)
