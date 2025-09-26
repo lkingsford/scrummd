@@ -32,6 +32,13 @@ def md3_fo() -> Generator[TextIOWrapper, None, None]:
 
 
 @pytest.fixture(scope="function")
+def md4_fo() -> Generator[TextIOWrapper, None, None]:
+    fo = open("test/data/md4.md")
+    yield fo
+    fo.close()
+
+
+@pytest.fixture(scope="function")
 def c4_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c4.md")
     yield fo
@@ -163,6 +170,26 @@ def test_underline_header_summary_meta(data_config, md3_fo):
     assert results.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
 
 
+def test_header_level_meta(data_config, md4_fo):
+    results = source_md.extract_fields(data_config, md4_fo.read())
+
+    assert results.meta("summary").header_level == 0, "Property"
+    assert results.meta("header 1").header_level == 1, "Header L1"
+    assert results.meta("header 1.1").header_level == 2, "Header L2"
+    assert results.meta("header 2").header_level == 1, "Header L1 after L2"
+    assert results.meta("header 2.1.1").header_level == 3, "Header L3 Skipping Level"
+
+
+def test_header_level_meta_underline(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md3_fo.read())
+
+    assert results.meta("summary").header_level == 1, "Summary =="
+    assert results.meta("double equals").header_level == 1, "== Header"
+    assert results.meta("entry after list").header_level == 2, "-- header"
+
+
 def test_underline_head_summary_order(data_config, md3_fo):
     config = copy(data_config)
     config.allow_header_summary = True
@@ -176,6 +203,35 @@ def test_underline_head_summary_order(data_config, md3_fo):
         "entry after list",
     ]
 
+
+def test_groups_by_source_md(data_config, md1_fo):
+    """Verify that the fields are correctly grouped (to be able to recreate the md"""
+    results = source_md.extract_fields(data_config, md1_fo.read())
+    assert results.keys_grouped_by_field_md_type() == [
+        ["summary", "status"],
+        ["description", "test field"],
+    ]
+
+
+def test_groups_by_source_md_summary(data_config, md3_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md3_fo.read())
+    assert results.keys_grouped_by_field_md_type() == [
+        ["note"],
+        ["summary"],
+        ["double equals", "list", "entry after list"],
+    ]
+
+def test_groups_by_source_md_summary(data_config, md5_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md5_fo.read())
+    assert results.keys_grouped_by_field_md_type() == [
+        ["note"],
+        ["summary"],
+        ["header 2", "header 1", "entry after list"]
+    ]
 
 def test_ignore_code_block(data_config, md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
