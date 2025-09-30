@@ -63,6 +63,8 @@ _extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")
 _extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
+_extract_header_level_re = re.compile(r"^#*")
+
 
 class FieldStr(str):
     """A str with the extra parsed information from the str"""
@@ -205,7 +207,9 @@ class ParsedMd:
         """
         return self._fields.keys()
 
-    def append_field(self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, header_level: int = 1) -> None:
+    def append_field(
+        self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, header_level: int = 1
+    ) -> None:
         """
         Add a field to the field dictionary, storing its location in metadata.
 
@@ -220,7 +224,12 @@ class ParsedMd:
         self._order.append(key)
 
     def insert_field(
-        self, raw_key: str, value: Field, md_type: FIELD_MD_TYPE, index: int, header_level: int = 1
+        self,
+        raw_key: str,
+        value: Field,
+        md_type: FIELD_MD_TYPE,
+        index: int,
+        header_level: int = 1,
     ) -> None:
         """
         Add a field to the field dictionary, storing its location in metadata.
@@ -305,10 +314,13 @@ class ParsedMd:
                 field = typed_field(stripped)
 
             if key not in self._fields:
-                # Forcing header_level to 1 until (if) adding a header level for new fields is
-                # added as a feature.
-                logical_type = FieldMetadata(_logical_type(config, key, field), raw_key, header_level=1)
-                new_md._meta[key] = logical_type
+                logical_type = _logical_type(config, key, field)
+                # Fixed logical header for new fields for now.
+                logical_header_level = (
+                    0 if logical_type == FIELD_MD_TYPE.PROPERTY else 1
+                )
+                meta = FieldMetadata(logical_type, raw_key, logical_header_level)
+                new_md._meta[key] = meta
                 if logical_type == FIELD_MD_TYPE.IMPLICIT_SUMMARY:
                     new_md._order.insert(0, key)
                 else:
@@ -489,6 +501,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
     block_status = BlockStatus.NO_BLOCK
     block_value = ""
     list_field_key = ""
+    header_level = 0
 
     for line in md_file.splitlines():
         stripped_line = line.strip()
@@ -505,6 +518,10 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                 block_name = raw_block_name
                 block_value = ""
                 block_status = BlockStatus.IN_HEADER_BLOCK
+                starting_hashes = _extract_header_level_re.match(stripped_line)
+                assert starting_hashes
+                header_level = len(starting_hashes[0])
+                assert header_level > 0
                 continue
             elif stripped_line.startswith("====") or stripped_line.startswith("----"):
                 # Currently, ==== and ---- are conflated, but they may become
@@ -514,6 +531,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                     raw_block_name = block_value_lines[-1].strip()
                     block_name = (block_value_lines[-1]).casefold()
                     block_value = ""
+                    header_level = 1 if stripped_line[0] == "=" else 2
                     block_status = BlockStatus.IN_HEADER_BLOCK
                     continue
             else:
@@ -540,10 +558,12 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
             if value == "":
                 block_status = BlockStatus.IN_PROPERTY_LIST
                 list_field_key = raw_list_field_key.casefold()
-                parsed.append_field(raw_list_field_key, [], FIELD_MD_TYPE.LIST_PROPERTY)
+                parsed.append_field(
+                    raw_list_field_key, [], FIELD_MD_TYPE.LIST_PROPERTY, 0
+                )
             else:
                 parsed.append_field(
-                    raw_list_field_key, typed_field(value), FIELD_MD_TYPE.PROPERTY
+                    raw_list_field_key, typed_field(value), FIELD_MD_TYPE.PROPERTY, 0
                 )
             continue
 
@@ -572,6 +592,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                         raw_block_name,
                         FieldStr(block_value.strip()),
                         FIELD_MD_TYPE.BLOCK,
+                        header_level,
                     )
                 block_value = ""
                 continue
@@ -585,20 +606,27 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                             raw_block_name,
                             typed_field("\n".join(block_value_lines[0:-1]).strip()),
                             FIELD_MD_TYPE.BLOCK,
+                            header_level,
                         )
                 if len(block_value_lines) > 1:
                     raw_block_name = (block_value_lines[-1]).strip()
                     block_name = raw_block_name.casefold()
+                    header_level = 1 if stripped_line[0] == "=" else 2
                 block_value = ""
             elif stripped_line[0] == "#":
                 block_status = BlockStatus.IN_HEADER_BLOCK
                 if block_name is not None:
+                    assert header_level > 0
                     parsed.append_field(
                         raw_block_name,
                         typed_field(block_value.strip()),
                         FIELD_MD_TYPE.BLOCK,
+                        header_level,
                     )
                 raw_block_name = get_raw_block_name(stripped_line)
+                starting_hashes = _extract_header_level_re.match(stripped_line)
+                assert starting_hashes
+                header_level = len(starting_hashes[0])
                 block_name = raw_block_name.casefold()
                 block_value = ""
                 continue
@@ -611,6 +639,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
                     FIELD_MD_TYPE.BLOCK,
+                    0,
                 )
             elif "```" in stripped_line:
                 block_status = BlockStatus.IN_CODE_BLOCK
@@ -621,7 +650,10 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
     if block_status == BlockStatus.IN_HEADER_BLOCK:
         if block_name is not None:
             parsed.append_field(
-                raw_block_name, FieldStr(block_value.strip()), FIELD_MD_TYPE.BLOCK
+                raw_block_name,
+                FieldStr(block_value.strip()),
+                FIELD_MD_TYPE.BLOCK,
+                header_level,
             )
 
     if config.allow_header_summary and "summary" not in parsed:
