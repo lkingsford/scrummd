@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import re
-
+import itertools
 from copy import deepcopy
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
@@ -28,7 +28,18 @@ class FIELD_MD_TYPE(Enum):
     PROPERTY = 1
     BLOCK = 2
     LIST_PROPERTY = 3
-    IMPLICIT_SUMMARY = 4
+    LIST_HEADER = 4
+    IMPLICIT_SUMMARY = 5
+
+
+"""Fields types that are grouped together in output"""
+GROUPED_TYPES = {
+    FIELD_MD_TYPE.IMPLICIT: 0,
+    FIELD_MD_TYPE.PROPERTY: 1,
+    FIELD_MD_TYPE.LIST_PROPERTY: 1,
+    FIELD_MD_TYPE.BLOCK: 2,
+    FIELD_MD_TYPE.IMPLICIT_SUMMARY: 3,
+}
 
 
 class FieldComponent:
@@ -64,6 +75,10 @@ _extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
 _extract_header_level_re = re.compile(r"^#*")
+"""Regex expression used to extract the amount of #'s"""
+
+_extract_octothorpless_header_re = re.compile("^#*(.*)")
+"""Regex to get the bits without #"""
 
 
 class FieldStr(str):
@@ -186,7 +201,13 @@ class ParsedMd:
         Returns:
             list[list[key]]: Ordered groups, with ordered lists of keys.
         """
-        raise NotImplementedError()
+        return [
+            # Converting to a list to open up more possibilities of use when formatting
+            list(group[1])
+            for group in itertools.groupby(
+                self._order, lambda k: GROUPED_TYPES.get(self._meta[k].md_type)
+            )
+        ]
 
     def copy(self) -> "ParsedMd":
         """
@@ -638,7 +659,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                 parsed.append_field(
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
-                    FIELD_MD_TYPE.BLOCK,
+                    FIELD_MD_TYPE.LIST_HEADER,
                     header_level,
                 )
             elif "```" in stripped_line:
@@ -669,7 +690,10 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
             # we can reduce the complexity of holding the data in
             # the algorithm proper
             for line in md_file.splitlines():
-                if line.casefold().strip() == header_key:
+                content_text_matches = _extract_octothorpless_header_re.search(line.casefold())
+                assert content_text_matches is not None
+                content_text = content_text_matches[1].strip()
+                if content_text == header_key:
                     previous_position = parsed.order().index(header_key)
                     parsed.insert_field(
                         "Summary",
