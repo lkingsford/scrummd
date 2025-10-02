@@ -39,6 +39,13 @@ def md4_fo() -> Generator[TextIOWrapper, None, None]:
 
 
 @pytest.fixture(scope="function")
+def md5_fo() -> Generator[TextIOWrapper, None, None]:
+    fo = open("test/special_cases/header_summary/md5.md")
+    yield fo
+    fo.close()
+
+
+@pytest.fixture(scope="function")
 def c4_md() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/collection2/c4.md")
     yield fo
@@ -213,25 +220,29 @@ def test_groups_by_source_md(data_config, md1_fo):
     ]
 
 
-def test_groups_by_source_md_summary(data_config, md3_fo):
+def test_groups_by_source_md_summary_underlines(data_config, md3_fo):
     config = copy(data_config)
     config.allow_header_summary = True
     results = source_md.extract_fields(config, md3_fo.read())
-    assert results.keys_grouped_by_field_md_type() == [
+    grouped = results.keys_grouped_by_field_md_type()
+    assert grouped == [
         ["note"],
         ["summary"],
         ["double equals", "list", "entry after list"],
     ]
 
-def test_groups_by_source_md_summary(data_config, md5_fo):
+
+def test_groups_by_source_md_summary_hash(data_config, md5_fo):
     config = copy(data_config)
     config.allow_header_summary = True
     results = source_md.extract_fields(config, md5_fo.read())
-    assert results.keys_grouped_by_field_md_type() == [
+    grouped = results.keys_grouped_by_field_md_type()
+    assert grouped == [
         ["note"],
         ["summary"],
-        ["header 2", "header 1", "entry after list"]
+        ["header 2", "header 1", "entry after list"],
     ]
+
 
 def test_ignore_code_block(data_config, md2_fo):
     """Test that fields inside a ``` block are ignored, and just form part of the value"""
