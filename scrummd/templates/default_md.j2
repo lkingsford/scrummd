@@ -5,16 +5,20 @@ Look - you can absolutely change this md if you want, but be careful: this is
 used for writing/editing and formatting cards. Screw it up, and you're going to
 break those functions.
 #}
-{%- for block in card.parsed_md.keys_grouped_by_field_md_type() -%}
+{%- for block in groups -%}
 {%- if block[0].name == "PROPERTY_BLOCK" -%}
 ---
 {% for property_name in block[1] -%}
-{{card.parsed_md.meta(property_name).raw_field_name}}: {{card.get_field(property_name)}}
+{{meta[property_name].raw_field_name}}: {{card.get_field(property_name)}}
 {% endfor -%}
 ---
 
-{%- elif block[0].name == "HEADER_BLOCK" -%}
+{% elif block[0].name == "HEADER_BLOCK" %}
+{% for field in block[1] -%}
+# {{meta[field].raw_field_name}}
 
+{{card.get_field(field)}}
 
+{% endfor %}
 {%- endif -%}
 {% endfor -%}

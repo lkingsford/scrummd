@@ -48,6 +48,7 @@ GROUPED_TYPES = {
     FIELD_MD_TYPE.IMPLICIT_SUMMARY: FIELD_GROUP_TYPE.IMPLICIT_SUMMARY,
 }
 
+GroupedKeys = list[tuple[FIELD_GROUP_TYPE, list[str]]]
 
 class FieldComponent:
     """A section of the field component"""
@@ -197,7 +198,7 @@ class ParsedMd:
         """
         return self._fields.items()
 
-    def keys_grouped_by_field_md_type(self) -> list[tuple[FIELD_GROUP_TYPE, list[str]]]:
+    def keys_grouped_by_field_md_type(self) -> GroupedKeys:
         """
         Field IDs grouped by the blocks of data types in the original source.
 

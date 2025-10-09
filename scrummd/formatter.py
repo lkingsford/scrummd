@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Callable, Optional, Any
 from importlib import resources
 import jinja2
 
-from scrummd.source_md import FieldStr, CardComponent, StringComponent
+from scrummd.source_md import (
+    FieldMetadata,
+    FieldStr,
+    CardComponent,
+    StringComponent,
+    GroupedKeys,
+)
 
 import scrummd.config
 from scrummd.exceptions import TemplateNotFoundError
@@ -125,6 +131,12 @@ class TemplateFields:
     interactive: bool
     """Whether the command is being run in an interactive terminal."""
 
+    groups: GroupedKeys
+    """Ordered keys groups by their block type in the md file."""
+
+    meta: dict[str, FieldMetadata]
+    """Metadata from the fields of original source md."""
+
 
 def _template_fields(
     config: scrummd.config.ScrumConfig, card: "Card", cards: "Collection"
@@ -135,6 +147,8 @@ def _template_fields(
         card=card,
         cards=cards,
         interactive=_is_interactive(),
+        groups=card.parsed_md.keys_grouped_by_field_md_type(),
+        meta=card.parsed_md._meta,  # TODO: Move _meta to a property or read only dict
     )
 
 
