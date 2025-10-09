@@ -4,6 +4,7 @@ import os
 import pytest
 from scrummd.exceptions import ImplicitChangeOfTypeError, UnsupportedModificationError
 import scrummd.source_md as source_md
+from scrummd.source_md import FIELD_GROUP_TYPE
 from typing import Generator
 from fixtures import data_config
 
@@ -215,8 +216,8 @@ def test_groups_by_source_md(data_config, md1_fo):
     """Verify that the fields are correctly grouped (to be able to recreate the md"""
     results = source_md.extract_fields(data_config, md1_fo.read())
     assert results.keys_grouped_by_field_md_type() == [
-        ["summary", "status"],
-        ["description", "test field"],
+        (FIELD_GROUP_TYPE.PROPERTY_BLOCK, ["summary", "status"]),
+        (FIELD_GROUP_TYPE.HEADER_BLOCK, ["description", "test field"]),
     ]
 
 

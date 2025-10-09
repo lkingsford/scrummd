@@ -1,24 +1,39 @@
-{% macro card_ref(card) -%}
-    {{ card.index }} ({{ card.status }})
-{%- endmacro %}
+{#
+Oy!
+You!
+Look - you can absolutely change this md if you want, but be careful: this is
+used for writing/editing and formatting cards. Screw it up, and you're going to
+break those functions.
+#}
+{%- macro format_header(text, level) -%}
+{%-   for _ in range(level) -%}#{%   endfor %} {{text}}
+{% endmacro -%}
+{%- for block in groups -%}
+{%-   if block[0].name == "PROPERTY_BLOCK" -%}
 ---
-{{ card.index }}: {{ card.summary | expand_field_str() }}
+{%-     for property_name in block[1] %}
+{%-       if meta[property_name].md_type.name == "LIST_PROPERTY" %}
+{{          meta[property_name].raw_field_name}}: 
+{%-         for value in card.get_field(property_name) %}
+  - {{value}}
+{%-         endfor -%}
+{%-       else %}
+{{          meta[property_name].raw_field_name}}: {{card.get_field(property_name)}}
+{%-       endif -%}
+{%      endfor %}
 ---
-{% for key, value in card.udf.items() %}
-{% if value is none %}
-{% elif value is string %}
-{% if "\n" in value %}
-# {{ key }}
-{{ value  | expand_field_str()}}
-
-{% else %}
-{{ key }}: {{ value }}
-{% endif %}
-{% elif value is number %}
-{{ key }}: {{ "%.2f"|format(value) }}
-{% elif value is list %}
-{% for item in value %}
-- {{ item }}
-{% endfor %}
-{% endif %}
-{% endfor %}
+{%   elif block[0].name == "IMPLICIT_SUMMARY" %}
+{{ format_header(card.summary, 1) -}}
+{%    elif block[0].name == "HEADER_BLOCK" -%}
+{%      for field in block[1] %}
+{{ format_header(meta[field].raw_field_name, meta[field].header_level) }}
+{%-       if meta[field].md_type.name == "LIST_HEADER" %}
+{%-         for value in card.get_field(field) %}
+  - {{value}}
+{%-          endfor %}
+{%        else %}
+{{card.get_field(field)}}
+{%        endif -%}
+{%      endfor %}
+{%    endif -%}
+{% endfor -%}
