@@ -32,15 +32,25 @@ class FIELD_MD_TYPE(Enum):
     IMPLICIT_SUMMARY = 5
 
 
+class FIELD_GROUP_TYPE(Enum):
+    """Type of group these fields are in"""
+    
+    UNSET = 0,
+    PROPERTY_BLOCK = 1,
+    HEADER_BLOCK = 2,
+    IMPLICIT_SUMMARY = 3
+
 """Fields types that are grouped together in output"""
 GROUPED_TYPES = {
-    FIELD_MD_TYPE.IMPLICIT: 0,
-    FIELD_MD_TYPE.PROPERTY: 1,
-    FIELD_MD_TYPE.LIST_PROPERTY: 1,
-    FIELD_MD_TYPE.BLOCK: 2,
-    FIELD_MD_TYPE.IMPLICIT_SUMMARY: 3,
+    FIELD_MD_TYPE.IMPLICIT: FIELD_GROUP_TYPE.UNSET,
+    FIELD_MD_TYPE.PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
+    FIELD_MD_TYPE.LIST_PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
+    FIELD_MD_TYPE.BLOCK: FIELD_GROUP_TYPE.HEADER_BLOCK,
+    FIELD_MD_TYPE.LIST_HEADER: FIELD_GROUP_TYPE.HEADER_BLOCK,
+    FIELD_MD_TYPE.IMPLICIT_SUMMARY: FIELD_GROUP_TYPE.IMPLICIT_SUMMARY,
 }
 
+GroupedKeys = list[tuple[FIELD_GROUP_TYPE, list[str]]]
 
 class FieldComponent:
     """A section of the field component"""
@@ -190,7 +200,7 @@ class ParsedMd:
         """
         return self._fields.items()
 
-    def keys_grouped_by_field_md_type(self) -> list[list[str]]:
+    def keys_grouped_by_field_md_type(self) -> GroupedKeys:
         """
         Field IDs grouped by the blocks of data types in the original source.
 
@@ -203,7 +213,7 @@ class ParsedMd:
         """
         return [
             # Converting to a list to open up more possibilities of use when formatting
-            list(group[1])
+            (group[0] or FIELD_GROUP_TYPE.IMPLICIT, list(group[1]))
             for group in itertools.groupby(
                 self._order, lambda k: GROUPED_TYPES.get(self._meta[k].md_type)
             )
@@ -522,6 +532,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
     block_status = BlockStatus.NO_BLOCK
     block_value = ""
     list_field_key = ""
+    raw_block_name = ""
     header_level = 0
 
     for line in md_file.splitlines():
@@ -653,9 +664,8 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                 continue
             elif stripped_line[0] == "-" and block_value.strip() == "":
                 block_status = BlockStatus.IN_HEADER_LIST
-                if block_name is not None:
-                    raw_block_name = block_name
-                    list_field_key = block_name.casefold()
+                if raw_block_name is not None:
+                    list_field_key = raw_block_name.casefold()
                 parsed.append_field(
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
