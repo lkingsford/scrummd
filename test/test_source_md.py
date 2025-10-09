@@ -228,7 +228,7 @@ def test_groups_by_source_md_summary_underlines(data_config, md3_fo):
     grouped = results.keys_grouped_by_field_md_type()
     assert grouped == [
         (FIELD_GROUP_TYPE.PROPERTY_BLOCK, ["note"]),
-        (FIELD_GROUP_TYPE.IMPLICIT, ["summary"]),
+        (FIELD_GROUP_TYPE.IMPLICIT_SUMMARY, ["summary"]),
         (FIELD_GROUP_TYPE.HEADER_BLOCK, ["double equals", "list", "entry after list"]),
     ]
 
@@ -240,7 +240,7 @@ def test_groups_by_source_md_summary_hash(data_config, md5_fo):
     grouped = results.keys_grouped_by_field_md_type()
     assert grouped == [
         (FIELD_GROUP_TYPE.PROPERTY_BLOCK, ["note"]),
-        (FIELD_GROUP_TYPE.IMPLICIT, ["summary"]),
+        (FIELD_GROUP_TYPE.IMPLICIT_SUMMARY, ["summary"]),
         (FIELD_GROUP_TYPE.HEADER_BLOCK, ["header 2", "header 1", "entry after list"]),
     ]
 
