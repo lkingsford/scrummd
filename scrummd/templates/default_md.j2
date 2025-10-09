@@ -1,24 +1,17 @@
-{% macro card_ref(card) -%}
-    {{ card.index }} ({{ card.status }})
-{%- endmacro %}
+{#
+Oy!
+You!
+Look - you can absolutely change this md if you want, but be careful: this is
+used for writing/editing and formatting cards. Screw it up, and you're going to
+break those functions.
+#}
+{%- for block in card.parsed_md.keys_grouped_by_field_md_type() -%}
+{%- if block[0].name == "PROPERTY_BLOCK" -%}
 ---
-{{ card.index }}: {{ card.summary | expand_field_str() }}
+{% for property_name in block[1] -%}
+{{card.parsed_md.meta(property_name).raw_field_name}}: {{card.get_field(property_name)}}
+{% endfor -%}
 ---
-{% for key, value in card.udf.items() %}
-{% if value is none %}
-{% elif value is string %}
-{% if "\n" in value %}
-# {{ key }}
-{{ value  | expand_field_str()}}
 
-{% else %}
-{{ key }}: {{ value }}
-{% endif %}
-{% elif value is number %}
-{{ key }}: {{ "%.2f"|format(value) }}
-{% elif value is list %}
-{% for item in value %}
-- {{ item }}
-{% endfor %}
-{% endif %}
-{% endfor %}
+{%- endif -%}
+{% endfor -%}

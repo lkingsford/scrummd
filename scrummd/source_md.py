@@ -31,13 +31,21 @@ class FIELD_MD_TYPE(Enum):
     IMPLICIT_SUMMARY = 4
 
 
+class FIELD_GROUP_TYPE(Enum):
+    """Type of group these fields are in"""
+    
+    UNSET = 0,
+    PROPERTY_BLOCK = 1,
+    HEADER_BLOCK = 2,
+    IMPLICIT_SUMMARY = 3
+
 """Fields types that are grouped together in output"""
 GROUPED_TYPES = {
-    FIELD_MD_TYPE.IMPLICIT: 0,
-    FIELD_MD_TYPE.PROPERTY: 1,
-    FIELD_MD_TYPE.LIST_PROPERTY: 1,
-    FIELD_MD_TYPE.BLOCK: 2,
-    FIELD_MD_TYPE.IMPLICIT_SUMMARY: 3,
+    FIELD_MD_TYPE.IMPLICIT: FIELD_GROUP_TYPE.UNSET,
+    FIELD_MD_TYPE.PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
+    FIELD_MD_TYPE.LIST_PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
+    FIELD_MD_TYPE.BLOCK: FIELD_GROUP_TYPE.HEADER_BLOCK,
+    FIELD_MD_TYPE.IMPLICIT_SUMMARY: FIELD_GROUP_TYPE.IMPLICIT_SUMMARY,
 }
 
 
@@ -189,7 +197,7 @@ class ParsedMd:
         """
         return self._fields.items()
 
-    def keys_grouped_by_field_md_type(self) -> list[list[str]]:
+    def keys_grouped_by_field_md_type(self) -> list[tuple[FIELD_GROUP_TYPE, list[str]]]:
         """
         Field IDs grouped by the blocks of data types in the original source.
 
@@ -202,7 +210,7 @@ class ParsedMd:
         """
         return [
             # Converting to a list to open up more possibilities of use when formatting
-            list(group[1])
+            (group[0] or FIELD_GROUP_TYPE.IMPLICIT, list(group[1]))
             for group in itertools.groupby(
                 self._order, lambda k: GROUPED_TYPES.get(self._meta[k].md_type)
             )
