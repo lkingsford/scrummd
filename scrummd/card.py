@@ -64,7 +64,7 @@ class Card:
         if field_name == "path":
             return FieldStr(self.path)
 
-        raise NotImplementedError("%f not yet available for output", [field_name])
+        raise NotImplementedError(f"{field_name} not yet available for output")
 
     def assert_valid_rules(self, config: CollectionConfig) -> None:
         """Raise an error if a card doesn't comply with an active configuration
