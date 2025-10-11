@@ -1,5 +1,11 @@
+"""
+These are all tests that format a card with the default_md, and verify the fields read back the same
+way.
+"""
+
 import pathlib
 import pytest
+from typing import Tuple
 
 import scrummd.collection
 import scrummd.card
@@ -8,12 +14,10 @@ import scrummd.formatter
 from fixtures import data_config, TEST_COLLECTION_KEYS, test_collection
 
 
-@pytest.mark.parametrize("card_key", TEST_COLLECTION_KEYS)
-def test_read_format_read_md(card_key: str, test_collection, data_config):
-    """
-    So - we read our test card, format it as an md, read it again, then check that it has the same
-    metadata, fields and values.
-    """
+def reread_card(
+    card_key, test_collection, data_config
+) -> Tuple[scrummd.card.Card, scrummd.card.Card]:
+    """Utility function for the test_default_md* tests"""
     card: scrummd.card.Card = test_collection.get(card_key)
     formatted_as_md = scrummd.formatter.format(
         data_config, "default_md.j2", card, test_collection
@@ -21,9 +25,17 @@ def test_read_format_read_md(card_key: str, test_collection, data_config):
     reread = scrummd.card.from_str(
         data_config, formatted_as_md, card.collections[0], pathlib.Path(card.path)
     )
+    return card, reread
 
-    assert card.udf == reread.udf
-    assert card.summary == reread.summary
+
+@pytest.mark.parametrize("card_key", TEST_COLLECTION_KEYS)
+def test_default_md_meta(card_key: str, test_collection, data_config):
+    """
+    Test that the meta writes/reads correctly.
+    """
+
+    card, reread = reread_card(card_key, test_collection, data_config)
+
     assert card.parsed_md.order() == reread.parsed_md.order()
     for field in card.parsed_md.order():
         assert (
@@ -37,3 +49,22 @@ def test_read_format_read_md(card_key: str, test_collection, data_config):
             card.parsed_md.meta(field).raw_field_name
             == reread.parsed_md.meta(field).raw_field_name
         )
+
+
+FIELDS_TO_VERIFY = [
+    "udf",
+    "summary",
+    "index",
+]
+
+
+@pytest.mark.parametrize("field", FIELDS_TO_VERIFY)
+@pytest.mark.parametrize("card_key", TEST_COLLECTION_KEYS)
+def test_default_md_fields(card_key: str, field: str, test_collection, data_config):
+    """
+    Test that various fields write/read correctly.
+    """
+
+    card, reread = reread_card(card_key, test_collection, data_config)
+
+    assert card.__dict__[field] == card.__dict__[field]
