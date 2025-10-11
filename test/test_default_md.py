@@ -67,4 +67,4 @@ def test_default_md_fields(card_key: str, field: str, test_collection, data_conf
 
     card, reread = reread_card(card_key, test_collection, data_config)
 
-    assert card.__dict__[field] == card.__dict__[field]
+    assert card.__dict__[field] == reread.__dict__[field]
