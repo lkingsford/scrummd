@@ -22,27 +22,23 @@ from fixtures import (
 
 
 def reread_card(
-    card_key, test_collection, data_config
+    card_key, test_collection, config
 ) -> Tuple[scrummd.card.Card, scrummd.card.Card]:
     """Utility function for the test_default_md* tests"""
     card: scrummd.card.Card = test_collection.get(card_key)
     formatted_as_md = scrummd.formatter.format(
-        data_config, "default_md.j2", card, test_collection
+        config, "default_md.j2", card, test_collection
     )
     reread = scrummd.card.from_str(
-        data_config, formatted_as_md, card.collections[0], pathlib.Path(card.path)
+        config, formatted_as_md, card.collections[0], pathlib.Path(card.path)
     )
     return card, reread
 
 
-@pytest.mark.parametrize("card_key", TEST_COLLECTION_KEYS)
-def test_default_md_meta(card_key: str, test_collection, data_config):
+def assert_meta_correct(card: scrummd.card.Card, reread: scrummd.card.Card):
     """
-    Test that the meta writes/reads correctly.
+    Test that the meta of the two cards matches
     """
-
-    card, reread = reread_card(card_key, test_collection, data_config)
-
     assert card.parsed_md.order() == reread.parsed_md.order()
     for field in card.parsed_md.order():
         assert (
@@ -97,7 +93,7 @@ def test_default_md_implicit_summary(card_key: str, implicit_summary_collection)
         card_key, implicit_summary_collection, IMPLICIT_SUMMARY_CONFIG
     )
 
-   # Verify key values
+    # Verify key values
     assert card.summary == reread.summary
     assert card.udf == reread.udf
     assert card.index == reread.index
