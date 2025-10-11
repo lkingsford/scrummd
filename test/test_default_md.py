@@ -11,7 +11,14 @@ import scrummd.collection
 import scrummd.card
 import scrummd.formatter
 
-from fixtures import data_config, TEST_COLLECTION_KEYS, test_collection
+from fixtures import (
+    data_config,
+    TEST_COLLECTION_KEYS,
+    test_collection,
+    IMPLICIT_SUMMARY_CONFIG,
+    IMPLICIT_SUMMARY_KEYS,
+    implicit_summary_collection,
+)
 
 
 def reread_card(
@@ -51,6 +58,16 @@ def test_default_md_meta(card_key: str, test_collection, data_config):
         )
 
 
+@pytest.mark.parametrize("card_key", TEST_COLLECTION_KEYS)
+def test_default_md_meta(card_key: str, test_collection, data_config):
+    """
+    Test that the meta writes/reads correctly.
+    """
+
+    card, reread = reread_card(card_key, test_collection, data_config)
+    assert_meta_correct(card, reread)
+
+
 FIELDS_TO_VERIFY = [
     "udf",
     "summary",
@@ -68,3 +85,22 @@ def test_default_md_fields(card_key: str, field: str, test_collection, data_conf
     card, reread = reread_card(card_key, test_collection, data_config)
 
     assert card.__dict__[field] == reread.__dict__[field]
+
+
+@pytest.mark.parametrize("card_key", IMPLICIT_SUMMARY_KEYS)
+def test_default_md_implicit_summary(card_key: str, implicit_summary_collection):
+    """
+    Test that cards with implicit summaries write/read correctly.
+    """
+
+    card, reread = reread_card(
+        card_key, implicit_summary_collection, IMPLICIT_SUMMARY_CONFIG
+    )
+
+   # Verify key values
+    assert card.summary == reread.summary
+    assert card.udf == reread.udf
+    assert card.index == reread.index
+
+    # Verify meta
+    assert_meta_correct(card, reread)
