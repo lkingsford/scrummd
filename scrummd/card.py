@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from scrummd.exceptions import (
     InvalidFileError,
     InvalidRestrictedFieldValueError,
@@ -8,7 +8,6 @@ from scrummd.exceptions import (
 )
 from scrummd.config import ScrumConfig, CollectionConfig
 from scrummd.source_md import (
-    CardComponent,
     FieldStr,
     extract_collection,
     extract_fields,
@@ -52,19 +51,20 @@ class Card:
             field_name (str): Field to retrieve
 
         Returns:
-            Field: Field from Card, or UDF if not present
+            Optional[Field]: Field from Card, UDF if not present, or None if in neither.
         """
         if field_name not in NON_UDF_FIELDS:
             return self.udf.get(field_name)
 
-        if field_name == "index":
-            return FieldStr(self.index)
-        if field_name == "summary":
-            return FieldStr(self.summary)
-        if field_name == "path":
-            return FieldStr(self.path)
-
-        raise NotImplementedError("%f not yet available for output", [field_name])
+        match field_name:
+            case "index":
+                return FieldStr(self.index)
+            case "summary":
+                return FieldStr(self.summary)
+            case "path":
+                return FieldStr(self.path)
+            case _:
+                raise NotImplementedError(f"{field_name} not yet available for output")
 
     def assert_valid_rules(self, config: CollectionConfig) -> None:
         """Raise an error if a card doesn't comply with an active configuration
@@ -138,7 +138,7 @@ def assert_valid_fields(config: ScrumConfig, fields: ParsedMd) -> None:
         raise InvalidFileError('"summary" must not be a list')
 
 
-NON_UDF_FIELDS = ["summary", "collections", "tags", "index", "path"]
+NON_UDF_FIELDS = ["summary", "index", "path"]
 """Fields that are read into the Card itself rather than into the UDF"""
 
 
@@ -179,6 +179,8 @@ def from_str(
         assert isinstance(parsed_md["index"], str)
         index = str(parsed_md["index"])
 
+    # collections is a UDF field (as what's in the file) as is tags, but both
+    # comprise of the actual collections that it's in.
     if "collections" in parsed_md:
         # Little back forward here to appease the typechecker
         parsed_collections = parsed_md["collections"]
