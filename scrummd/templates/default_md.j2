@@ -27,7 +27,6 @@ break those functions.
 
 {%    elif block[0].name == "HEADER_BLOCK" %}
 {%      for field in block[1] %}
-{{meta[field]}}
 {{ format_header(meta[field].raw_field_name, meta[field].header_level) }}
 {%-       if meta[field].md_type.name == "LIST_HEADER" %}
 {%-         for value in card.get_field(field) %}
