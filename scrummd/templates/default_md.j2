@@ -23,13 +23,13 @@ break those functions.
 # {{ card.summary }}
 
 {%    elif block[0].name == "HEADER_BLOCK" %}
-{%      for field in block[1] -%}
-{%-       if meta[field].md_type.name == "HEADER_LIST" %}
+{%      for field in block[1] %}
+# {{ meta[field].raw_field_name}}
+{%-       if meta[field].md_type.name == "LIST_HEADER" %}
 {%-         for value in card.get_field(field) %}
     - {{value}}
-{%          endfor %}
+{%-          endfor %}
 {%        else %}
-# {{meta[field].raw_field_name}}
 {{card.get_field(field)}}
 {%        endif -%}
 {%      endfor %}
