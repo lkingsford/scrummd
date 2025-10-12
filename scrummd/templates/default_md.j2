@@ -15,22 +15,21 @@ break those functions.
 {%-       if meta[property_name].md_type.name == "LIST_PROPERTY" %}
 {{          meta[property_name].raw_field_name}}: 
 {%-         for value in card.get_field(property_name) %}
-    - {{value}}
+  - {{value}}
 {%-         endfor -%}
 {%-       else %}
 {{          meta[property_name].raw_field_name}}: {{card.get_field(property_name)}}
 {%-       endif -%}
 {%      endfor %}
 ---
-{%-   elif block[0].name == "IMPLICIT_SUMMARY" %}
-{{ format_header(card.summary, 1) }}
-
-{%    elif block[0].name == "HEADER_BLOCK" %}
+{%   elif block[0].name == "IMPLICIT_SUMMARY" %}
+{{ format_header(card.summary, 1) -}}
+{%    elif block[0].name == "HEADER_BLOCK" -%}
 {%      for field in block[1] %}
 {{ format_header(meta[field].raw_field_name, meta[field].header_level) }}
 {%-       if meta[field].md_type.name == "LIST_HEADER" %}
 {%-         for value in card.get_field(field) %}
-    - {{value}}
+  - {{value}}
 {%-          endfor %}
 {%        else %}
 {{card.get_field(field)}}
