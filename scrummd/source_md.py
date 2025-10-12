@@ -670,7 +670,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
                     FIELD_MD_TYPE.LIST_HEADER,
-                    0,
+                    header_level,
                 )
             elif "```" in stripped_line:
                 block_status = BlockStatus.IN_CODE_BLOCK
