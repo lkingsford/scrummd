@@ -131,10 +131,17 @@ def test_extract_variety(data_config, c7_md):
     assert sorted(results.keys()) == ["assignee", "status", "summary", "test list"]
 
 
-def test_underline_header_summary(data_config, md3_fo):
+def test_header_summary_underline(data_config, md3_fo):
     config = copy(data_config)
     config.allow_header_summary = True
     results = source_md.extract_fields(config, md3_fo.read())
+    assert results["summary"] == "This is the summary without it being in a property"
+
+
+def test_header_summary_hash(data_config, md5_fo):
+    config = copy(data_config)
+    config.allow_header_summary = True
+    results = source_md.extract_fields(config, md5_fo.read())
     assert results["summary"] == "This is the summary without it being in a property"
 
 
