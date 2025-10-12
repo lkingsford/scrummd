@@ -112,7 +112,7 @@ def _is_interactive() -> bool:
     Returns:
         bool: True if TTD
     """
-    return sys.stdin.isatty()
+    return sys.stdout.isatty()
 
 
 @dataclass(frozen=True)
