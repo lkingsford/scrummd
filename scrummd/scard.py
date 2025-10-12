@@ -84,10 +84,10 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def entry():
+def entry(args=None, config=None):
     """Entry point for scard"""
-    args = create_parser().parse_args()
-    config = load_fs_config()
+    args = create_parser().parse_args(args)
+    config = config or load_fs_config()
     collection = get_collection(config)
 
     output_cards(config, args.template, collection, args.card)
