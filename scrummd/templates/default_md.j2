@@ -5,6 +5,9 @@ Look - you can absolutely change this md if you want, but be careful: this is
 used for writing/editing and formatting cards. Screw it up, and you're going to
 break those functions.
 #}
+{%- macro format_header(text, level) -%}
+{%-   for _ in range(level) -%}#{%   endfor %} {{text}}
+{% endmacro -%}
 {%- for block in groups -%}
 {%-   if block[0].name == "PROPERTY_BLOCK" -%}
 ---
@@ -20,11 +23,12 @@ break those functions.
 {%      endfor %}
 ---
 {%-   elif block[0].name == "IMPLICIT_SUMMARY" %}
-# {{ card.summary }}
+{{ format_header(card.summary, 1) }}
 
 {%    elif block[0].name == "HEADER_BLOCK" %}
 {%      for field in block[1] %}
-# {{ meta[field].raw_field_name}}
+{{meta[field]}}
+{{ format_header(meta[field].raw_field_name, meta[field].header_level) }}
 {%-       if meta[field].md_type.name == "LIST_HEADER" %}
 {%-         for value in card.get_field(field) %}
     - {{value}}
