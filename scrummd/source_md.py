@@ -700,14 +700,15 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
             # we can reduce the complexity of holding the data in
             # the algorithm proper
             for line in md_file.splitlines():
-                content_text_matches = _extract_octothorpless_header_re.search(line.casefold())
-                assert content_text_matches is not None
-                content_text = content_text_matches[1].strip()
+                summary_text_matches = _extract_octothorpless_header_re.search(line)
+                assert summary_text_matches is not None
+                content_text = summary_text_matches[1].casefold().strip()
                 if content_text == header_key:
                     previous_position = parsed.order().index(header_key)
+                    summary_text = _extract_octothorpless_header_re.search(line)
                     parsed.insert_field(
                         "Summary",
-                        FieldStr(line.strip()),
+                        FieldStr(summary_text_matches[1].strip()),
                         FIELD_MD_TYPE.IMPLICIT_SUMMARY,
                         previous_position,
                     )
