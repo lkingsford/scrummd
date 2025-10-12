@@ -28,7 +28,8 @@ class FIELD_MD_TYPE(Enum):
     PROPERTY = 1
     BLOCK = 2
     LIST_PROPERTY = 3
-    IMPLICIT_SUMMARY = 4
+    LIST_HEADER = 4
+    IMPLICIT_SUMMARY = 5
 
 
 class FIELD_GROUP_TYPE(Enum):
@@ -45,6 +46,7 @@ GROUPED_TYPES = {
     FIELD_MD_TYPE.PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
     FIELD_MD_TYPE.LIST_PROPERTY: FIELD_GROUP_TYPE.PROPERTY_BLOCK,
     FIELD_MD_TYPE.BLOCK: FIELD_GROUP_TYPE.HEADER_BLOCK,
+    FIELD_MD_TYPE.LIST_HEADER: FIELD_GROUP_TYPE.HEADER_BLOCK,
     FIELD_MD_TYPE.IMPLICIT_SUMMARY: FIELD_GROUP_TYPE.IMPLICIT_SUMMARY,
 }
 
@@ -667,7 +669,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                 parsed.append_field(
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
-                    FIELD_MD_TYPE.BLOCK,
+                    FIELD_MD_TYPE.LIST_HEADER,
                     0,
                 )
             elif "```" in stripped_line:
