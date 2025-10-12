@@ -6,34 +6,32 @@ used for writing/editing and formatting cards. Screw it up, and you're going to
 break those functions.
 #}
 {%- for block in groups -%}
-{%- if block[0].name == "PROPERTY_BLOCK" -%}
+{%-   if block[0].name == "PROPERTY_BLOCK" -%}
 ---
-{%- for property_name in block[1] %}
-{%- if meta[property_name].md_type.name == "PROPERTY_LIST" %}
-{{meta[property_name].raw_field_name}}: 
-{%- for value in card.get_field[property_name] -%}
-  - {{value}}
-{% endfor -%}
-{%- else %}
-{{meta[property_name].raw_field_name}}: {{card.get_field(property_name)}}
-{%- endif -%}
-{% endfor %}
+{%-     for property_name in block[1] %}
+{%-       if meta[property_name].md_type.name == "LIST_PROPERTY" %}
+{{          meta[property_name].raw_field_name}}: 
+{%-         for value in card.get_field(property_name) %}
+    - {{value}}
+{%-         endfor -%}
+{%-       else %}
+{{          meta[property_name].raw_field_name}}: {{card.get_field(property_name)}}
+{%-       endif -%}
+{%      endfor %}
 ---
-
-{% elif block[0].name == "HEADER_BLOCK" %}
-{% for field in block[1] -%}
-# {{meta[field].raw_field_name}}
-
-{{card.get_field(field)}}
-
-{% endfor %}
-{%- elif block[0].name == "IMPLICIT_SUMMARY" %}
+{%-   elif block[0].name == "IMPLICIT_SUMMARY" %}
 # {{ card.summary }}
 
-{%- elif meta[property_name].md_type.name == "HEADER_LIST" %}
-{%- for value in card.get_field[property_name] -%}
-  - {{value}}
-{% endfor -%}
-
-{% endif -%}
+{%    elif block[0].name == "HEADER_BLOCK" %}
+{%      for field in block[1] -%}
+{%-       if meta[field].md_type.name == "HEADER_LIST" %}
+{%-         for value in card.get_field(field) %}
+    - {{value}}
+{%          endfor %}
+{%        else %}
+# {{meta[field].raw_field_name}}
+{{card.get_field(field)}}
+{%        endif -%}
+{%      endfor %}
+{%    endif -%}
 {% endfor -%}
