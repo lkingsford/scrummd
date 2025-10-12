@@ -532,6 +532,7 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
     block_status = BlockStatus.NO_BLOCK
     block_value = ""
     list_field_key = ""
+    raw_block_name = ""
     header_level = 0
 
     for line in md_file.splitlines():
@@ -663,9 +664,8 @@ def extract_fields(config: ScrumConfig, md_file: str) -> ParsedMd:
                 continue
             elif stripped_line[0] == "-" and block_value.strip() == "":
                 block_status = BlockStatus.IN_HEADER_LIST
-                if block_name is not None:
-                    raw_block_name = block_name
-                    list_field_key = block_name.casefold()
+                if raw_block_name is not None:
+                    list_field_key = raw_block_name.casefold()
                 parsed.append_field(
                     raw_block_name,
                     [FieldStr(split_list_item(stripped_line))],
