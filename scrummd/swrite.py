@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from scrummd.collection import get_collection
 from scrummd.card import from_parsed
+from scrummd.formatter import format, DEFAULT_MD_TEMPLATE
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
 from scrummd.version import version_to_output
@@ -41,15 +42,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-o",
+        "--stdout",
         action="store_true",
         help="Output to stdout instead of overwriting the card.",
         default=False,
     )
 
     return parser
-
-
-import pprint
 
 
 def entry() -> None:
@@ -84,8 +83,6 @@ def entry() -> None:
 
         changes.append((args.set_stdin, std_input.strip()))
 
-    print(changes)
-
     # Apply all - but again, not actually outputting until we've proven we're all good with
     # everything
     modified_cards = [
@@ -98,10 +95,13 @@ def entry() -> None:
         for card in cards
     ]
 
-    print("----new----")
-
     for card in modified_cards:
-        pprint.pprint(card)
+        formatted = format(config, DEFAULT_MD_TEMPLATE, card, collection)
+        if args.stdout:
+            print(formatted)
+        else:
+            with open(card.path, "w") as card_file:
+                card_file.write(formatted)
 
 
 if __name__ == "__main__":
