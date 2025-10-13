@@ -28,6 +28,10 @@ env = jinja2.Environment()
 _compiled_templates: dict[str, jinja2.Template] = {}
 
 
+DEFAULT_MD_TEMPLATE = "default_md.j2"
+"""The default MD template"""
+
+
 def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.Template:
     """Load the template (using path rules) from the filename.
 

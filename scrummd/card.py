@@ -35,6 +35,9 @@ class Card:
     path: str
     """Path of the file for this card"""
 
+    collection_from_path: str
+    """Collection that was implied from the path"""
+
     udf: dict[str, Field]
     """All additional fields in the file"""
 
@@ -142,18 +145,15 @@ NON_UDF_FIELDS = ["summary", "index", "path"]
 """Fields that are read into the Card itself rather than into the UDF"""
 
 
-def from_str(
-    config: ScrumConfig,
-    input_card: str,
-    collection: str,
-    path: Path,
+def from_parsed(
+    config: ScrumConfig, parsed_md: ParsedMd, collection_from_path: str, path: Path
 ) -> Card:
-    """Create a card from a string (usually, the file)
+    """Create a card from a parsed MD file (usually, from a file via extract_fields)
 
     Args:
         config (ScrumConfig): ScrumMD configuration to use.
-        input_card (str): String containing the card data from the file.
-        collection (str): Collection the card is known to be in.
+        parsed_md (ParsedMd): The ParsedMd file to create the card with
+        collection_from_path (str): Collection from the relative path
         path (Path): Path of the file
 
     Raises:
@@ -166,8 +166,9 @@ def from_str(
     Returns:
         Card: The card for the md file
     """
-    parsed_md: ParsedMd = extract_fields(config, input_card)
-    collections: list[str] = [collection]
+
+    collections: list[str] = [collection_from_path]
+
     index = path.name.split(".")[0]
     udf: dict[str, Field] = {
         k: v for k, v in parsed_md.items() if k not in NON_UDF_FIELDS
@@ -202,10 +203,12 @@ def from_str(
             if len(defined_collection) > 0:
                 defined_collections[f"{index}.{key}"] = defined_collection
 
-    assert isinstance(parsed_md["summary"], str)
+    parsed_summary = parsed_md["summary"]
+    assert isinstance(parsed_summary, str)
     new_card = Card(
         path=str(path),
-        summary=parsed_md["summary"],
+        collection_from_path=collection_from_path,
+        summary=parsed_summary,
         index=index,
         collections=collections,
         defined_collections=defined_collections,
@@ -215,3 +218,31 @@ def from_str(
     )
 
     return new_card
+
+
+def from_str(
+    config: ScrumConfig,
+    input_card: str,
+    collection_from_path: str,
+    path: Path,
+) -> Card:
+    """Create a card from a string (usually, the file)
+
+    Args:
+        config (ScrumConfig): ScrumMD configuration to use.
+        input_card (str): String containing the card data from the file.
+        collection_from_path (str): Collection the card is known to be from the relative path.
+        path (Path): Path of the file
+
+    Raises:
+        InvalidFileError: Error with the MD file
+        InvalidRestrictedFieldValueError: A field with restricted permitted
+            values per config has another value present.
+        RequiredFieldNotPresentError: A field required by the config is not
+            present
+
+    Returns:
+        Card: The card for the md file
+    """
+    parsed_md: ParsedMd = extract_fields(config, input_card)
+    return from_parsed(config, parsed_md, collection_from_path, path)
