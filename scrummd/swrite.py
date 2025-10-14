@@ -51,12 +51,14 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def entry() -> None:
+def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
     """Entry point"""
     parser = create_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(injected_args)
+    stdin = stdin or sys.stdin
+    stdout = stdout or sys.stdout
 
-    config = load_fs_config()
+    config = config or load_fs_config()
     collection = get_collection(config)
 
     if not args.set and not args.set_stdin:
@@ -79,7 +81,7 @@ def entry() -> None:
                 "<ctrl+d> (on Linux/Mac) or <ctrl+z> <enter> (on Windows) to close input.",
                 file=sys.stderr,
             )
-        std_input = sys.stdin.read()
+        std_input = stdin.read()
 
         changes.append((args.set_stdin, std_input.strip()))
 
@@ -98,7 +100,7 @@ def entry() -> None:
     for card in modified_cards:
         formatted = format(config, DEFAULT_MD_TEMPLATE, card, collection)
         if args.stdout:
-            print(formatted)
+            stdout.writelines(formatted)
         else:
             with open(card.path, "w") as card_file:
                 card_file.write(formatted)
