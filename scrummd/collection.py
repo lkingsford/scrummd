@@ -151,7 +151,7 @@ def get_collection(
                 if partial_name in collections:
                     collections[partial_name][index] = card
                 else:
-                    collections[partial_name] = Collection({index: card})
+                    collections[partial_name] = Collection({str(index): card})
 
     # Get all the collections defined in a card in the fields. Again - needs to
     # add to parent collections too.
