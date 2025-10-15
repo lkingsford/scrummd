@@ -205,7 +205,7 @@ def get_collection(
     return collections.get(collection_name) or Collection({})
 
 
-def _sort_key(field: Field | str | None) -> tuple[float, str]:
+def _sort_key(field: Field | str | list[Field] | None) -> tuple[int, None | float | str | list[str] ]:
     """
     Sort by None, then Numerical order, then Strings
 
@@ -219,11 +219,13 @@ def _sort_key(field: Field | str | None) -> tuple[float, str]:
         tuple[float, str]: A tuple suitable for sorting by
     """
     if field is None:
-        return (float("-inf"), "")
+        return (0,None)
     elif isinstance(field, FieldNumber):
-        return (field, "")
+        return (1,field)
     elif isinstance(field, FieldStr) or isinstance(field, str):
-        return (float("inf"), field)
+        return (2, field)
+    elif isinstance(field, FieldStr) or isinstance(field, str):
+        return (3, field)
     else:
         raise TypeError("%s is not an available type", type(field))
 
