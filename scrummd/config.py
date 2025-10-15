@@ -75,7 +75,9 @@ class ScrumConfig(CollectionConfig):
 
         for key, collection in self.collections.items():
             if isinstance(self.collections[key], dict):
-                self.collections[key] = CollectionConfig(**collection)
+                # Type ignore isn't great - but the workarounds are a bit messier.
+                # Candidate to improve in the future.
+                self.collections[key] = CollectionConfig(**collection)  # type: ignore[assignment]
 
         if isinstance(self.sbl, dict):
             self.sbl = SblConfig(**self.sbl)
