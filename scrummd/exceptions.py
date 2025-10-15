@@ -1,29 +1,29 @@
 class ValidationError(ValueError):
-    """Triggered if there's a failure validating a card that's being built"""
+    """Raised if there's a failure validating a card that's being built"""
 
     pass
 
 
 class InvalidFileError(ValidationError):
-    """Triggered if the file is not a valid scrummd md file"""
+    """Raised if the file is not a valid scrummd md file"""
 
     pass
 
 
 class RuleViolationError(ValidationError):
-    """Triggered if there is a validation of one of the rules for this scrum repo"""
+    """Raised if there is a validation of one of the rules for this scrum repo"""
 
     pass
 
 
 class InvalidRestrictedFieldValueError(RuleViolationError):
-    """Triggered if there's a field with defined values, and a value in a file that isn't in those defined values"""
+    """Raised if there's a field with defined values, and a value in a file that isn't in those defined values"""
 
     pass
 
 
 class DuplicateIndexError(RuleViolationError):
-    """Called when an index of a card is declared twice in the collection."""
+    """Raised when an index of a card is declared twice in the collection."""
 
     def __init__(self, index, path):
         self.index = index
@@ -32,27 +32,27 @@ class DuplicateIndexError(RuleViolationError):
 
 
 class InvalidGroupError(ValueError):
-    """Called when a field is not a valid group"""
+    """Raised when a field is not a valid group"""
 
     pass
 
 
 class RequiredFieldNotPresentError(RuleViolationError):
-    """Called when a field required by config isn't present"""
+    """Raised when a field required by config isn't present"""
 
     pass
 
 
 class ImplicitChangeOfTypeError(ValidationError):
-    """Called when the existing type of a field (list, property, block) no longer supports the new value."""
+    """Raised when the existing type of a field (list, property, block) no longer supports the new value."""
 
 
 class UnsupportedModificationError(ValidationError):
-    """Called when a field can't be modified."""
+    """Raised when a field can't be modified."""
 
 
 class TemplateNotFoundError(FileNotFoundError):
-    """Called when a template file can't be found."""
+    """Raised when a template file can't be found."""
 
     def __init__(self, filename, searched_paths):
         self.searched_paths = searched_paths
