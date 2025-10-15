@@ -9,7 +9,7 @@ from typing import Optional
 from scrummd.card import Card, from_str
 import logging
 from scrummd.config import CollectionConfig, ScrumConfig
-from scrummd.exceptions import ValidationError, DuplicateIndexError
+from scrummd.exceptions import ValidationError, InvalidGroupError, DuplicateIndexError
 from scrummd.source_md import Field, FieldNumber, FieldStr, typed_field
 
 logger = logging.getLogger(__name__)
@@ -205,7 +205,9 @@ def get_collection(
     return collections.get(collection_name) or Collection({})
 
 
-def _sort_key(field: Field | str | list[Field] | None) -> tuple[int, None | float | str | list[str] ]:
+def _sort_key(
+    field: Field | str | list[Field] | None,
+) -> tuple[int, None | float | str | list[str]]:
     """
     Sort by None, then Numerical order, then Strings
 
@@ -219,9 +221,9 @@ def _sort_key(field: Field | str | list[Field] | None) -> tuple[int, None | floa
         tuple[float, str]: A tuple suitable for sorting by
     """
     if field is None:
-        return (0,None)
+        return (0, None)
     elif isinstance(field, FieldNumber):
-        return (1,field)
+        return (1, field)
     elif isinstance(field, FieldStr) or isinstance(field, str):
         return (2, field)
     elif isinstance(field, FieldStr) or isinstance(field, str):
@@ -270,8 +272,10 @@ def group_collection(
             card_field = card.get_field(cur_group)
             if isinstance(card_field, str):
                 fields.add(typed_field(card_field.casefold()))
-            else:
+            elif isinstance(card_field, float):
                 fields.add(card_field)
+            else:
+                raise InvalidGroupError("Grouping by a list is not supported")
         ordered_fields = sorted(fields, key=_sort_key)
         for ordered_field in ordered_fields:
             card_groups[ordered_field] = Group(Groups(), Collection())
