@@ -31,7 +31,6 @@ _compiled_templates: dict[str, jinja2.Template] = {}
 DEFAULT_MD_TEMPLATE = "default_md.j2"
 """The default MD template"""
 
-
 def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.Template:
     """Load the template (using path rules) from the filename.
 
@@ -59,13 +58,13 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
         scrum_path / "templates" / filename,
     ]
 
-    # IT'S MY LIBRARY AND I'LL MAKE IT DENSE IF I WANT TO!
+    # Check git history for previous version; this was modified for Python 3.11 support:
+    # Python 3.13 files supports folder traversing in the path, 3.11 does not.
+    module_path = resources.files("scrummd") / "templates" / filename
     found_file = next(
         (open(path, "rt") for path in paths if path.exists()),
         (
-            resources.open_text(scrummd, "templates/" + filename)
-            if resources.is_resource(scrummd, "templates/" + filename)
-            else None
+            module_path.open('r') if module_path.is_file() else None
         ),
     )
 
