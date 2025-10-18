@@ -76,7 +76,6 @@ def test_swrite_field_stdin(test_collection, data_config):
 
     out_stream = io.StringIO()
     new_description = "Space.\\nThe Final Frontier."
-    cwd = os.getcwd()
     in_stream = io.StringIO(new_description)
     entry(
         ["c1", "--set-stdin", "description", "-o"],
@@ -96,3 +95,79 @@ def test_swrite_field_stdin(test_collection, data_config):
     )
 
     assert card_from_stdio.udf["description"] == new_description
+
+
+def test_swrite_add_to_list(test_collection, data_config):
+    """End to end test adding a value to a list"""
+
+    out_stream = io.StringIO()
+    entry(
+        ["c5", "-o", "--add", "tags", "new tag"],
+        stdout=out_stream,
+        config=data_config,
+    )
+    out_stream.seek(0)
+    read_card = test_collection["c5"]
+    card_from_stdio = from_str(
+        data_config,
+        out_stream.read(),
+        read_card.collection_from_path,
+        Path(read_card.path),
+    )
+
+    assert card_from_stdio.udf["tags"] == ["special2", "special", "special3", "new tag"]
+
+
+def test_swrite_remove_from_list(test_collection, data_config):
+    """End to end test removing a value from a list"""
+
+    out_stream = io.StringIO()
+    entry(
+        ["-o", "c5", "-r", "tags", "special"],
+        stdout=out_stream,
+        config=data_config,
+    )
+    out_stream.seek(0)
+    read_card = test_collection["c5"]
+    card_from_stdio = from_str(
+        data_config,
+        out_stream.read(),
+        read_card.collection_from_path,
+        Path(read_card.path),
+    )
+
+    assert card_from_stdio.udf["tags"] == ["special2", "special3"]
+
+
+def test_swrite_multiple_operations(test_collection, data_config):
+    """End to end test add to list, remove from list, modify other field."""
+
+    out_stream = io.StringIO()
+    entry(
+        [
+            "-o",
+            "c5",
+            "-r",
+            "tags",
+            "special",
+            "-s",
+            "estimate",
+            "3",
+            "-a",
+            "tags",
+            "new",
+        ],
+        stdout=out_stream,
+        config=data_config,
+    )
+    out_stream.seek(0)
+    read_card = test_collection["c5"]
+    card_from_stdio = from_str(
+        data_config,
+        out_stream.read(),
+        read_card.collection_from_path,
+        Path(read_card.path),
+    )
+
+    assert card_from_stdio.udf["tags"] == ["special2", "special3", "new"]
+    assert card_from_stdio.udf["estimate"] == 3
