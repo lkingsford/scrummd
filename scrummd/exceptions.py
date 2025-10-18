@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class ValidationError(ValueError):
     """Raised if there's a failure validating a card that's being built"""
 
@@ -47,6 +50,18 @@ class ImplicitChangeOfTypeError(ValidationError):
     """Raised when the existing type of a field (list, property, block) no longer supports the new value."""
 
 
+class NotAListError(ImplicitChangeOfTypeError):
+    """Raised when attempting to modify a list... that's not a list."""
+
+    def __init__(self, field: str, index: Optional[str] = None):
+        self.field = field
+        self.index = index
+        if index:
+            super().__init__(f"Field {field} in {index} is not a list.")
+
+        super().__init__(f"Field {field} is not a list.")
+
+
 class UnsupportedModificationError(ValidationError):
     """Raised when a field can't be modified."""
 
@@ -71,6 +86,10 @@ class ValuesNotPresentError(ValidationError):
             super().__init__(f"Values {values} are not in field {field} in {index}.")
 
         super().__init__(f"Values {values} are not in field {field}.")
+
+
+class ValueNotPresentError(ValidationError):
+    """Raised when a field isn't present that is to be removed."""
 
 
 class FieldNotPresentError(ValidationError):

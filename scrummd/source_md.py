@@ -12,6 +12,9 @@ from scrummd.exceptions import (
     InvalidFileError,
     ImplicitChangeOfTypeError,
     UnsupportedModificationError,
+    NotAListError,
+    FieldNotPresentError,
+    ValueNotPresentError,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,11 +37,12 @@ class FIELD_MD_TYPE(Enum):
 
 class FIELD_GROUP_TYPE(Enum):
     """Type of group these fields are in"""
-    
-    UNSET = 0,
-    PROPERTY_BLOCK = 1,
-    HEADER_BLOCK = 2,
+
+    UNSET = (0,)
+    PROPERTY_BLOCK = (1,)
+    HEADER_BLOCK = (2,)
     IMPLICIT_SUMMARY = 3
+
 
 """Fields types that are grouped together in output"""
 GROUPED_TYPES = {
@@ -51,6 +55,7 @@ GROUPED_TYPES = {
 }
 
 GroupedKeys = list[tuple[FIELD_GROUP_TYPE, list[str]]]
+
 
 class FieldComponent:
     """A section of the field component"""
@@ -363,11 +368,41 @@ class ParsedMd:
             new_md._fields[key] = field
         return new_md
 
+    def add_to_list(
+        self, config: ScrumConfig, field: str, values: list[str]
+    ) -> "ParsedMd":
+        """
+        Add an item to a field list, returning a new ParsedMd
 
-    def add_to_list(self, config: ScrumConfig, field: str, values: list[str]) -> "ParsedMd":
-        raise NotImplementedError()
-    
-    def remove_from_list(self, config: ScrumConfig, field: str, values: list[str]) -> "ParsedMd":
+        Args:
+            config (ScrumConfig): The config to use for type checking..
+            field (str): The field to add to.
+            values (list[str]): The values to add to the field.
+        """
+        # Need a deepcopy, because we're modifying (not replacing) child objects.
+        new_md = deepcopy(self)
+        key = field.casefold()
+        if key not in self._fields:
+            raise FieldNotPresentError(field)
+
+        meta = self._meta.get(key)
+        assert meta
+        if meta.md_type not in (FIELD_MD_TYPE.LIST_HEADER, FIELD_MD_TYPE.LIST_PROPERTY):
+            raise NotAListError(field)
+
+        field_list = new_md._fields.get(key)
+        assert field_list
+        assert isinstance(field_list, list)
+
+        for value in values:
+            field_list.append(FieldStr(value.strip()))
+
+        return new_md
+
+
+    def remove_from_list(
+        self, config: ScrumConfig, field: str, values: list[str]
+    ) -> "ParsedMd":
         raise NotImplementedError()
 
 
