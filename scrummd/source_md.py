@@ -14,7 +14,7 @@ from scrummd.exceptions import (
     UnsupportedModificationError,
     NotAListError,
     FieldNotPresentError,
-    ValueNotPresentError,
+    ValuesNotPresentError,
 )
 
 logger = logging.getLogger(__name__)
@@ -378,6 +378,10 @@ class ParsedMd:
             config (ScrumConfig): The config to use for type checking..
             field (str): The field to add to.
             values (list[str]): The values to add to the field.
+
+        Raises:
+            NotAListError: Raised when the field to be written to is not a list.
+            FieldNotPresentError: Raised when the field is not present in the file.
         """
         # Need a deepcopy, because we're modifying (not replacing) child objects.
         new_md = deepcopy(self)
@@ -399,11 +403,55 @@ class ParsedMd:
 
         return new_md
 
-
     def remove_from_list(
         self, config: ScrumConfig, field: str, values: list[str]
     ) -> "ParsedMd":
-        raise NotImplementedError()
+        """
+        Remove an item from a field list, returning a new ParsedMD. Multiple matching items will
+        result in only the first being removed.
+
+        Args:
+            config (ScrumConfig): The config to use for type checking..
+            field (str): The field to add to.
+            values (list[str]): The (case insensitive) values to remove from the field.
+
+
+        Raises:
+            NotAListError: Raised when the field to be written to is not a list.
+            FieldNotPresentError: Raised when the field is not present in the file.
+            ValuesNotPresentError: Raised when the value is not present in the list to remove.
+        """
+
+        # Need a deepcopy, because we're modifying (not replacing) child objects.
+        new_md = deepcopy(self)
+        key = field.casefold()
+        if key not in self._fields:
+            raise FieldNotPresentError(field)
+
+        meta = self._meta.get(key)
+        assert meta
+        if meta.md_type not in (FIELD_MD_TYPE.LIST_HEADER, FIELD_MD_TYPE.LIST_PROPERTY):
+            raise NotAListError(field)
+
+        field_list = new_md._fields.get(key)
+        assert field_list
+        assert isinstance(field_list, list)
+
+        prepped_values = [value.strip().casefold() for value in values]
+
+        # Can't use filterfalse, because removing only the first. We at least only get one pass,
+        # right? And _should_ speed up as we go. (At the expense of a little extra big O).
+        for field_value in field_list[:]:
+            liberal_value = field_value.casefold()
+
+            if liberal_value in prepped_values:
+                prepped_values.remove(liberal_value)
+                field_list.remove(field_value)
+
+        if prepped_values:
+            raise ValuesNotPresentError(prepped_values, field)
+
+        return new_md
 
 
 def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
