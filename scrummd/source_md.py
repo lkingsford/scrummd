@@ -364,6 +364,13 @@ class ParsedMd:
         return new_md
 
 
+    def add_to_list(self, config: ScrumConfig, field: str, values: list[str]) -> "ParsedMd":
+        raise NotImplementedError()
+    
+    def remove_from_list(self, config: ScrumConfig, field: str, values: list[str]) -> "ParsedMd":
+        raise NotImplementedError()
+
+
 def _logical_type(config: ScrumConfig, key: str, field: Field) -> FIELD_MD_TYPE:
     """Returns the most sensible (or necessary) type for this field
 

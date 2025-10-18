@@ -56,4 +56,29 @@ class TemplateNotFoundError(FileNotFoundError):
 
     def __init__(self, filename, searched_paths):
         self.searched_paths = searched_paths
-        super().__init__(f"Template {filename} not found in {searched_paths} or module")
+        super().__init__(
+            f"Template {filename} not found in {searched_paths} or module."
+        )
+
+
+class ValuesNotPresentError(ValidationError):
+    """Raised when a field isn't present that is to be removed."""
+
+    def __init__(self, values: list[str], field: str, index: Optional[str] = None):
+        self.field = field
+        self.index = index
+        if index:
+            super().__init__(f"Values {values} are not in field {field} in {index}.")
+
+        super().__init__(f"Values {values} are not in field {field}.")
+
+
+class FieldNotPresentError(ValidationError):
+    """Raised when a field that should be modified isn't present."""
+
+    def __init__(self, field: str, index: Optional[str] = None):
+        self.field = field
+        self.index = index
+        if index:
+            super().__init__(f"Field {field} not found in {index}")
+        super().__init__(f"Field {field} not found.")
