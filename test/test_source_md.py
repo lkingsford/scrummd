@@ -2,7 +2,12 @@ from copy import copy
 from io import TextIOWrapper
 import os
 import pytest
-from scrummd.exceptions import ImplicitChangeOfTypeError, UnsupportedModificationError
+from scrummd.exceptions import (
+    FieldNotPresentError,
+    ImplicitChangeOfTypeError,
+    UnsupportedModificationError,
+    ValuesNotPresentError,
+)
 import scrummd.source_md as source_md
 from scrummd.source_md import FIELD_GROUP_TYPE
 from typing import Generator
@@ -38,10 +43,22 @@ def md4_fo() -> Generator[TextIOWrapper, None, None]:
     yield fo
     fo.close()
 
+@pytest.fixture(scope="function")
+def md6_fo() -> Generator[TextIOWrapper, None, None]:
+    fo = open("test/data/md6.md")
+    yield fo
+    fo.close()
 
 @pytest.fixture(scope="function")
 def md5_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/special_cases/header_summary/md5.md")
+    yield fo
+    fo.close()
+
+
+@pytest.fixture(scope="function")
+def c1_md() -> Generator[TextIOWrapper, None, None]:
+    fo = open("test/data/collection1/c1.md")
     yield fo
     fo.close()
 
@@ -423,3 +440,109 @@ def test_modify_add_logical_property(data_config, md1_fo):
     assert modify["new field"] == "A new summary"
     assert modify._meta["new field"].md_type == source_md.FIELD_MD_TYPE.PROPERTY
     assert modify._order[-1] == "new field"
+
+
+def test_add_to_list(data_config, c4_md):
+    """Test adding values to a list field"""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.add_to_list(
+        data_config, "tags", ["Modified Tag 1", "Modified Tag 2"]
+    )
+    assert modify["tags"] == [
+        "special",
+        "special2",
+        "Modified Tag 1",
+        "Modified Tag 2",
+    ]
+
+
+def test_add_to_list_case_insensitive(data_config, c4_md):
+    """Test adding values to a list field with different casing to the canonical field name."""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.add_to_list(
+        data_config, "Tags", ["Modified Tag 1", "Modified Tag 2"]
+    )
+    assert modify["tags"] == [
+        "special",
+        "special2",
+        "Modified Tag 1",
+        "Modified Tag 2",
+    ]
+
+
+def test_add_to_list_field_not_present(data_config, c1_md):
+    """Test adding values to a list field where the field isn't present."""
+    extracted = source_md.extract_fields(data_config, c1_md.read())
+    pytest.raises(
+        FieldNotPresentError,
+        lambda: extracted.add_to_list(data_config, "list 1", ["field values"]),
+    )
+
+
+def test_add_to_list_retains_original(data_config, c4_md):
+    """Test modifying doesn't alter the original object."""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    extracted.add_to_list(data_config, "tags", ["Modified Tag 1", "Modified Tag 2"])
+    assert extracted["tags"] == [
+        "special",
+        "special2",
+    ]
+
+
+def test_remove_from_list(data_config, c4_md):
+    """Test removing values from a list field"""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.remove_from_list(data_config, "tags", ["special"])
+    assert modify["tags"] == ["special2"]
+
+
+def test_remove_from_list_value_not_present(data_config, c4_md):
+    """Test removing values where the value doesn't exist"""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    pytest.raises(
+        ValuesNotPresentError,
+        lambda: extracted.remove_from_list(data_config, "tags", ["new tag 3"]),
+    )
+
+
+def test_remove_from_list_field_not_present(data_config, c1_md):
+    """Test removing values where the value doesn't exist"""
+    extracted = source_md.extract_fields(data_config, c1_md.read())
+    pytest.raises(
+        FieldNotPresentError,
+        lambda: extracted.remove_from_list(data_config, "list", ["new tag 3"]),
+    )
+
+
+def test_remove_from_list_case_insensitive_key(data_config, c4_md):
+    """
+    Test removing values from list field works with case in input differing from the case in
+    the canonical field name.
+    """
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.remove_from_list(data_config, "Tags", ["Special"])
+    assert modify["tags"] == ["special2"] 
+
+
+def test_remove_from_list_case_insensitive_field(data_config, c4_md):
+    """
+    Test removing values from list field works with case in input differing from the case in
+    the original value.
+    """
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    modify = extracted.remove_from_list(data_config, "tags", ["Special"])
+    assert modify["tags"] == ["special2"]
+
+def test_remove_from_list_with_multiple(data_config, md6_fo):
+    """
+    Test removing values from list field removed first matching value.
+    """
+    extracted = source_md.extract_fields(data_config, md6_fo.read())
+    modify = extracted.remove_from_list(data_config, "tags", ["Special3"])
+    assert modify["tags"] == ["Special3", "special2", "special3"]
+
+def test_remove_from_list_retains_original(data_config, c4_md):
+    """Test modifying doesn't alter the original object."""
+    extracted = source_md.extract_fields(data_config, c4_md.read())
+    extracted.remove_from_list(data_config, "tags", ["special2"])
+    assert extracted["tags"] == ["special", "special2"]
