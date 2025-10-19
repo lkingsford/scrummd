@@ -436,6 +436,7 @@ class ParsedMd:
         assert isinstance(field_list, list)
 
         prepped_values = [value.strip().casefold() for value in values]
+        logger.info("before {}", prepped_values)
 
         # Can't use filterfalse, because removing only the first. We at least only get one pass,
         # right? And _should_ speed up as we go. (At the expense of a little extra big O).
@@ -447,6 +448,7 @@ class ParsedMd:
                 field_list.remove(field_value)
 
         if prepped_values:
+            logger.info(prepped_values)
             raise ValuesNotPresentError(prepped_values, field)
 
         return new_md
