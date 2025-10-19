@@ -3,8 +3,11 @@
 import argparse
 import logging
 import sys
+from io import StringIO
+from typing import Optional
 from functools import reduce
 from pathlib import Path
+from typing import List, TextIO
 from scrummd.collection import get_collection
 from scrummd.card import from_parsed
 from scrummd.exceptions import ModificationError
@@ -71,16 +74,21 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
+def entry(
+    injected_args: Optional[List[str]] = None,
+    config: Optional[ScrumConfig] = None,
+    stdin: Optional[StringIO] = None,
+    stdout: Optional[StringIO] = None,
+) -> None:
     """Entry point"""
     parser = create_parser()
     args = parser.parse_args(injected_args)
-    stdin = stdin or sys.stdin
-    stdout = stdout or sys.stdout
+    _stdin = stdin or sys.stdin
+    _stdout = stdout or sys.stdout
 
-    config = config or load_fs_config()
-    assert config
-    collection = get_collection(config)
+    _config = config or load_fs_config()
+    assert _config
+    collection = get_collection(_config)
 
     if not any((args.set, args.set_stdin, args.add, args.remove)):
         parser.error(
@@ -94,19 +102,23 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
 
     cards = [collection[card] for card in args.cards]
 
-    set_fields = [(arg[0], arg[1]) for arg in (args.set or [])]
-    add_values = [(arg[0], [arg[1]]) for arg in (args.add or [])]
-    remove_values = [(arg[0], [arg[1]]) for arg in (args.remove or [])]
+    set_fields: list[tuple[str, str]] = [(arg[0], arg[1]) for arg in (args.set or [])]
+    add_values: list[tuple[str, list[str]]] = [
+        (arg[0], [arg[1]]) for arg in (args.add or [])
+    ]
+    remove_values: list[tuple[str, list[str]]] = [
+        (arg[0], [arg[1]]) for arg in (args.remove or [])
+    ]
 
     if args.set_stdin:
-        if sys.stdout.isatty():
+        if _stdout.isatty():
             # Little thing to just make a users life nicer
             print("Reading into %s from terminal.", file=sys.stderr)
             print(
                 "<ctrl+d> (on Linux/Mac) or <ctrl+z> <enter> (on Windows) to close input.",
                 file=sys.stderr,
             )
-        std_input = stdin.read()
+        std_input = _stdin.read()
 
         set_fields.append((args.set_stdin, std_input.strip()))
 
@@ -115,18 +127,18 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
         # everything
         modified_cards = [
             from_parsed(
-                config,
+                _config,
                 reduce(
-                    lambda parsed_md, to_remove, config=config: parsed_md.remove_from_list(
-                        config, *to_remove
+                    lambda parsed_md, to_remove: parsed_md.remove_from_list(
+                        _config, *to_remove
                     ),
                     remove_values,
                     reduce(
-                        lambda parsed_md, to_add, config=config: parsed_md.add_to_list(
-                            config, *to_add
+                        lambda parsed_md, to_add: parsed_md.add_to_list(
+                            _config, *to_add
                         ),
                         add_values,
-                        card.parsed_md.set_fields(config, set_fields),
+                        card.parsed_md.set_fields(_config, set_fields),
                     ),
                 ),
                 card.collection_from_path,
@@ -136,9 +148,9 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
         ]
 
         for card in modified_cards:
-            formatted = format(config, DEFAULT_MD_TEMPLATE, card, collection)
+            formatted = format(_config, DEFAULT_MD_TEMPLATE, card, collection)
             if args.stdout:
-                stdout.writelines(formatted)
+                _stdout.writelines(formatted)
             else:
                 with open(card.path, "w") as card_file:
                     card_file.write(formatted)
