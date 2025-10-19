@@ -43,11 +43,13 @@ def md4_fo() -> Generator[TextIOWrapper, None, None]:
     yield fo
     fo.close()
 
+
 @pytest.fixture(scope="function")
 def md6_fo() -> Generator[TextIOWrapper, None, None]:
     fo = open("test/data/md6.md")
     yield fo
     fo.close()
+
 
 @pytest.fixture(scope="function")
 def md5_fo() -> Generator[TextIOWrapper, None, None]:
@@ -324,7 +326,7 @@ def test_fieldstr_component(input, expected):
 def test_modify_property_basic(data_config, md1_fo):
     """Test modifying a property"""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = modify = extracted.apply_modifications(data_config, [("status", "Done")])
+    modify = modify = extracted.set_fields(data_config, [("status", "Done")])
     assert modify["status"] == "Done"
     assert modify.meta("status").md_type == source_md.FIELD_MD_TYPE.PROPERTY
 
@@ -332,7 +334,7 @@ def test_modify_property_basic(data_config, md1_fo):
 def test_modify_block_basic(data_config, md1_fo):
     """Test modifying a block"""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = extracted.apply_modifications(
+    modify = extracted.set_fields(
         data_config, [("description", "A\n new\n multiline description.")]
     )
     assert modify["description"] == "A\n new\n multiline description."
@@ -352,9 +354,7 @@ Index: 5
 
 Stuff here
 ```"""
-    modify = extracted.apply_modifications(
-        data_config, [("description", example_card_text)]
-    )
+    modify = extracted.set_fields(data_config, [("description", example_card_text)])
     assert modify["description"] == example_card_text
     assert modify.meta("description").md_type == source_md.FIELD_MD_TYPE.BLOCK
 
@@ -364,7 +364,7 @@ def test_modify_header_summary(data_config, md3_fo):
     config = copy(data_config)
     config.allow_header_summary = True
     extracted = source_md.extract_fields(config, md3_fo.read())
-    modify = extracted.apply_modifications(config, [("summary", "A new summary")])
+    modify = extracted.set_fields(config, [("summary", "A new summary")])
     assert modify["summary"] == "A new summary"
     assert modify.meta("summary").md_type == source_md.FIELD_MD_TYPE.IMPLICIT_SUMMARY
     assert modify.meta("summary").raw_field_name == "Summary"
@@ -381,7 +381,7 @@ def test_extract_format_underline(data_config, md3_fo):
 def test_modify_header_list(data_config, c4_md):
     """Test modifying a list field"""
     extracted = source_md.extract_fields(data_config, c4_md.read())
-    modify = extracted.apply_modifications(
+    modify = extracted.set_fields(
         data_config, [("tags", """- new tag 1\n- new tag 2""")]
     )
     assert modify["tags"] == ["new tag 1", "new tag 2"]
@@ -393,20 +393,20 @@ def test_modify_invalid_newline_in_property(data_config, md1_fo):
     """Test that adding a newline in a property fails."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     with pytest.raises(ImplicitChangeOfTypeError):
-        extracted.apply_modifications(data_config, [("status", "Done\nActually?")])
+        extracted.set_fields(data_config, [("status", "Done\nActually?")])
 
 
 def test_modify_invalid_index(data_config, md1_fo):
     """Test that attempting to modify the index fails."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
     with pytest.raises(UnsupportedModificationError):
-        extracted.apply_modifications(data_config, [("index", "duck")])
+        extracted.set_fields(data_config, [("index", "duck")])
 
 
 def test_modify_multiple(data_config, md1_fo):
     """Test modifying multiple fields."""
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = extracted.apply_modifications(
+    modify = extracted.set_fields(
         data_config,
         [
             ("status", "Done"),
@@ -423,7 +423,7 @@ def test_modify_multiple(data_config, md1_fo):
 
 def test_modify_add_logical_block(data_config, md1_fo):
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = extracted.apply_modifications(
+    modify = extracted.set_fields(
         data_config, [("New field", "A\n new\n multiline description.")]
     )
     assert modify["new field"] == "A\n new\n multiline description."
@@ -434,9 +434,7 @@ def test_modify_add_logical_block(data_config, md1_fo):
 
 def test_modify_add_logical_property(data_config, md1_fo):
     extracted = source_md.extract_fields(data_config, md1_fo.read())
-    modify = extracted.apply_modifications(
-        data_config, [("new field", "A new summary")]
-    )
+    modify = extracted.set_fields(data_config, [("new field", "A new summary")])
     assert modify["new field"] == "A new summary"
     assert modify._meta["new field"].md_type == source_md.FIELD_MD_TYPE.PROPERTY
     assert modify._order[-1] == "new field"
@@ -521,7 +519,7 @@ def test_remove_from_list_case_insensitive_key(data_config, c4_md):
     """
     extracted = source_md.extract_fields(data_config, c4_md.read())
     modify = extracted.remove_from_list(data_config, "Tags", ["Special"])
-    assert modify["tags"] == ["special2"] 
+    assert modify["tags"] == ["special2"]
 
 
 def test_remove_from_list_case_insensitive_field(data_config, c4_md):
@@ -533,6 +531,7 @@ def test_remove_from_list_case_insensitive_field(data_config, c4_md):
     modify = extracted.remove_from_list(data_config, "tags", ["Special"])
     assert modify["tags"] == ["special2"]
 
+
 def test_remove_from_list_with_multiple(data_config, md6_fo):
     """
     Test removing values from list field removed first matching value.
@@ -540,6 +539,7 @@ def test_remove_from_list_with_multiple(data_config, md6_fo):
     extracted = source_md.extract_fields(data_config, md6_fo.read())
     modify = extracted.remove_from_list(data_config, "tags", ["Special3"])
     assert modify["tags"] == ["Special3", "special2", "special3"]
+
 
 def test_remove_from_list_retains_original(data_config, c4_md):
     """Test modifying doesn't alter the original object."""

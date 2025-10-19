@@ -313,21 +313,19 @@ class ParsedMd:
         """
         return self._meta[key]
 
-    def apply_modifications(
-        self, config: ScrumConfig, modifications: list[tuple[str, str]]
-    ) -> "ParsedMd":
+
+    def set_fields(self, config: ScrumConfig, fields_to_set: list[tuple[str, str]]) -> "ParsedMd":
         """
-        Applies the modifications (in MD format) to the field listed, returning a new ParsedMd
+        Sets all fields in fields_to_set to their respective values (creating them if they don't
+            exist. Returns a new ParsedMd with the new value.
 
         Args:
             config (ScrumConfig): The config to use for type checking.
-            modifications (list[tuple[str, str]]): The modifications to apply.
-
-        Returns:
-            ParsedMd: A new ParsedMd with the modifications applied.
+            fields_to_set (list[tuple[str, str]]): Fields to set or create.
+                Each change is in the form of (FieldToChange, ValueToSetItTo).
         """
         new_md = self.copy()
-        for raw_key, new_value in modifications:
+        for raw_key, new_value in fields_to_set:
             key = raw_key.casefold()
             if key == "index":
                 raise UnsupportedModificationError(

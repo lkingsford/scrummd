@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from functools import reduce
 from pathlib import Path
 from scrummd.collection import get_collection
 from scrummd.card import from_parsed
@@ -35,7 +36,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="append",
         nargs=2,
         metavar=("FIELD", "VALUE"),
-        help='Fields to set in the format "field=value".',
+        help="Fields to set.",
     )
     parser.add_argument(
         "--set-stdin", "-i", metavar=("FIELD"), help="Field to set from stdin."
@@ -46,6 +47,24 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Output to stdout instead of overwriting the card.",
         default=False,
+    )
+
+    parser.add_argument(
+        "--add",
+        "-a",
+        action="append",
+        nargs=2,
+        metavar=("FIELD", "VALUE"),
+        help="Add values to an existing list in a card.",
+    )
+
+    parser.add_argument(
+        "--remove",
+        "-r",
+        action="append",
+        nargs=2,
+        metavar=("FIELD", "VALUE"),
+        help="Remove values (case insensitively) from an existing list in a card.",
     )
 
     return parser
@@ -59,10 +78,13 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
     stdout = stdout or sys.stdout
 
     config = config or load_fs_config()
+    assert config
     collection = get_collection(config)
 
-    if not args.set and not args.set_stdin:
-        parser.error("At least one of --set/-s or --set-stdin/-i must be provided.")
+    if not any((args.set, args.set_stdin, args.add, args.remove)):
+        parser.error(
+            "At least one of --set/-s, --set-stdin/-i, --add/-a or --remove/-r must be provided."
+        )
 
     for card in args.cards:
         if card not in collection:
@@ -71,7 +93,9 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
 
     cards = [collection[card] for card in args.cards]
 
-    changes = [(arg[0], arg[1]) for arg in (args.set or [])]
+    set_fields = [(arg[0], arg[1]) for arg in (args.set or [])]
+    add_values = [(arg[0], [arg[1]]) for arg in (args.add or [])]
+    remove_values = [(arg[0], [arg[1]]) for arg in (args.remove or [])]
 
     if args.set_stdin:
         if sys.stdout.isatty():
@@ -83,14 +107,26 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
             )
         std_input = stdin.read()
 
-        changes.append((args.set_stdin, std_input.strip()))
+        set_fields.append((args.set_stdin, std_input.strip()))
 
     # Apply all - but again, not actually outputting until we've proven we're all good with
     # everything
     modified_cards = [
         from_parsed(
             config,
-            card.parsed_md.apply_modifications(config, changes),
+            reduce(
+                lambda parsed_md, to_remove, config=config: parsed_md.remove_from_list(
+                    config, *to_remove
+                ),
+                remove_values,
+                reduce(
+                    lambda parsed_md, to_add, config=config: parsed_md.add_to_list(
+                        config, *to_add
+                    ),
+                    add_values,
+                    card.parsed_md.set_fields(config, set_fields),
+                ),
+            ),
             card.collection_from_path,
             Path(card.path),
         )
