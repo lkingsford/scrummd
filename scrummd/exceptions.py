@@ -46,7 +46,21 @@ class RequiredFieldNotPresentError(RuleViolationError):
     pass
 
 
-class ImplicitChangeOfTypeError(ValidationError):
+class TemplateNotFoundError(FileNotFoundError):
+    """Raised when a template file can't be found."""
+
+    def __init__(self, filename, searched_paths):
+        self.searched_paths = searched_paths
+        super().__init__(
+            f"Template {filename} not found in {searched_paths} or module."
+        )
+
+
+class ModificationError(Exception):
+    """Errors raised that prevent modification."""
+
+
+class ImplicitChangeOfTypeError(ModificationError):
     """Raised when the existing type of a field (list, property, block) no longer supports the new value."""
 
 
@@ -62,37 +76,28 @@ class NotAListError(ImplicitChangeOfTypeError):
         super().__init__(f"Field {field} is not a list.")
 
 
-class UnsupportedModificationError(ValidationError):
+class UnsupportedModificationError(ModificationError):
     """Raised when a field can't be modified."""
 
 
-class TemplateNotFoundError(FileNotFoundError):
-    """Raised when a template file can't be found."""
-
-    def __init__(self, filename, searched_paths):
-        self.searched_paths = searched_paths
-        super().__init__(
-            f"Template {filename} not found in {searched_paths} or module."
-        )
-
-
-class ValuesNotPresentError(ValidationError):
+class ValuesNotPresentError(ModificationError):
     """Raised when a field isn't present that is to be removed."""
 
     def __init__(self, values: list[str], field: str, index: Optional[str] = None):
         self.field = field
         self.index = index
+        # Not in the f-strings, as " in strings in code-blocks in f-strings is not supported by
+        # Python 3.11.
+        values_str = '", "'.join(values) + '"'
         if index:
-            super().__init__(f"Values {values} are not in field {field} in {index}.")
+            super().__init__(
+                f"Values {values_str} are not in field {field} in {index}."
+            )
 
-        super().__init__(f"Values {values} are not in field {field}.")
-
-
-class ValueNotPresentError(ValidationError):
-    """Raised when a field isn't present that is to be removed."""
+        super().__init__(f"Values {values_str} are not in field {field}.")
 
 
-class FieldNotPresentError(ValidationError):
+class FieldNotPresentError(ModificationError):
     """Raised when a field that should be modified isn't present."""
 
     def __init__(self, field: str, index: Optional[str] = None):

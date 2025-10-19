@@ -7,6 +7,7 @@ from functools import reduce
 from pathlib import Path
 from scrummd.collection import get_collection
 from scrummd.card import from_parsed
+from scrummd.exceptions import ModificationError
 from scrummd.formatter import format, DEFAULT_MD_TEMPLATE
 from scrummd.config import ScrumConfig
 from scrummd.config_loader import load_fs_config
@@ -109,37 +110,43 @@ def entry(injected_args=None, config=None, stdin=None, stdout=None) -> None:
 
         set_fields.append((args.set_stdin, std_input.strip()))
 
-    # Apply all - but again, not actually outputting until we've proven we're all good with
-    # everything
-    modified_cards = [
-        from_parsed(
-            config,
-            reduce(
-                lambda parsed_md, to_remove, config=config: parsed_md.remove_from_list(
-                    config, *to_remove
-                ),
-                remove_values,
+    try:
+        # Apply all - but again, not actually outputting until we've proven we're all good with
+        # everything
+        modified_cards = [
+            from_parsed(
+                config,
                 reduce(
-                    lambda parsed_md, to_add, config=config: parsed_md.add_to_list(
-                        config, *to_add
+                    lambda parsed_md, to_remove, config=config: parsed_md.remove_from_list(
+                        config, *to_remove
                     ),
-                    add_values,
-                    card.parsed_md.set_fields(config, set_fields),
+                    remove_values,
+                    reduce(
+                        lambda parsed_md, to_add, config=config: parsed_md.add_to_list(
+                            config, *to_add
+                        ),
+                        add_values,
+                        card.parsed_md.set_fields(config, set_fields),
+                    ),
                 ),
-            ),
-            card.collection_from_path,
-            Path(card.path),
-        )
-        for card in cards
-    ]
+                card.collection_from_path,
+                Path(card.path),
+            )
+            for card in cards
+        ]
 
-    for card in modified_cards:
-        formatted = format(config, DEFAULT_MD_TEMPLATE, card, collection)
-        if args.stdout:
-            stdout.writelines(formatted)
-        else:
-            with open(card.path, "w") as card_file:
-                card_file.write(formatted)
+        for card in modified_cards:
+            formatted = format(config, DEFAULT_MD_TEMPLATE, card, collection)
+            if args.stdout:
+                stdout.writelines(formatted)
+            else:
+                with open(card.path, "w") as card_file:
+                    card_file.write(formatted)
+
+    except ModificationError as e:
+        # I know this eats the backtrace and is a less meaningful error, but these particular
+        # exceptions are intended for the user (and formatted accordingly).
+        logger.error(str(e))
 
 
 if __name__ == "__main__":
