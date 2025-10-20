@@ -11,7 +11,7 @@ from scrummd.exceptions import (
 import scrummd.source_md as source_md
 from scrummd.source_md import FIELD_GROUP_TYPE
 from typing import Generator
-from fixtures import data_config
+from fixtures import data_config, test_collection
 
 # Should these be one fixture?
 
@@ -276,10 +276,79 @@ def test_ignore_code_block(data_config, md2_fo):
     results = source_md.extract_fields(data_config, md2_fo.read())
     # This would be 'Test Card 4' if it read inside the code block
     assert results["summary"] == "Test Card With Code"
+    description = results["description"]
+    assert isinstance(description, str)
     # This wouldn't be there if the block wasn't there as a string
-    assert "Test Card 4" in results["description"]
+    assert "Test Card 4" in description
     # This wouldn't be there if it stopped adding after the block
-    assert "something else" in results["description"]
+    assert "Whatever else?" in description
+
+
+def test_components_ignore_code_block(data_config, md2_fo, test_collection):
+    """
+    Test that the component isolation inside the ``` blocks are ignored, and form their own component.
+    """
+    results = source_md.extract_fields(data_config, md2_fo.read())
+    # This would be in a card block, not a string block, if it isn't ignored.
+    description = results["description"]
+    assert isinstance(description, source_md.FieldStr)
+    components = description.components(test_collection)
+    assert not any(
+        [
+            component
+            for component in components
+            if isinstance(component, source_md.CardComponent)
+        ]
+    )
+    assert (
+        len(
+            [
+                component
+                for component in components
+                if isinstance(component, source_md.CodeBlockComponent)
+            ]
+        )
+        == 1
+    )
+
+
+def test_components_ignore_code_quote(data_config, md2_fo, test_collection):
+    """
+    Test that the component isolation inside the ` quotes are ignored, and form their own
+    component.
+    """
+    results = source_md.extract_fields(data_config, md2_fo.read())
+    # This would be in a card block, not a string block, if it isn't ignored.
+    quote = results["quote"]
+    assert isinstance(quote, source_md.FieldStr)
+    components = quote.components(test_collection)
+    assert not any(
+        [
+            component
+            for component in components
+            if isinstance(component, source_md.CardComponent)
+        ]
+    )
+    assert (
+        len(
+            [
+                component
+                for component in components
+                if isinstance(component, source_md.CodeQuoteComponent)
+            ]
+        )
+        == 1
+    )
+
+
+def test_extract_collection_ignore_code_block(data_config, md2_fo):
+    """
+    Test that the component isolation inside the ``` blocks are ignored, and just form part of
+    the FieldStr.
+    """
+    results = source_md.extract_fields(data_config, md2_fo.read())
+    # This would will be in the collection, if it isn't ignored.
+    assert "c1" not in source_md.extract_collection(results["description"])
 
 
 @pytest.mark.parametrize(
@@ -294,7 +363,7 @@ def test_ignore_code_block(data_config, md2_fo):
     ],
 )
 def test_extract_collection(input, expected):
-    results = source_md.extract_collection(input)
+    results = source_md.extract_collection(source_md.FieldStr(input))
     assert results == expected
 
 
