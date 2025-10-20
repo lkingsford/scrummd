@@ -46,7 +46,7 @@ def output_cards(
     config: ScrumConfig,
     template: str,
     collection: Collection,
-    card_indexes: list[str],
+    card_indexes: list[str] | str,
 ):
     """Output cards to stdout
 
@@ -55,8 +55,9 @@ def output_cards(
         collection (Collection): Complete collection of cards
         card_index (list[str]): Indexes of cards to output
     """
+    indexes = card_indexes if isinstance(card_indexes, list) else [card_indexes]
 
-    for card_index in card_indexes:
+    for card_index in indexes:
         if card_index not in collection:
             logger.error("Card %s not found", card_index)
             continue

@@ -6,8 +6,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Optional, Any
 from importlib import resources
 import jinja2
+import logging
 
 from scrummd.source_md import (
+    CodeBlockComponent,
+    CodeQuoteComponent,
     FieldMetadata,
     FieldStr,
     CardComponent,
@@ -27,9 +30,12 @@ env = jinja2.Environment()
 
 _compiled_templates: dict[str, jinja2.Template] = {}
 
+LOGGER = logging.getLogger(__name__)
+
 
 DEFAULT_MD_TEMPLATE = "default_md.j2"
 """The default MD template"""
+
 
 def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.Template:
     """Load the template (using path rules) from the filename.
@@ -63,9 +69,7 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
     module_path = resources.files("scrummd") / "templates" / filename
     found_file = next(
         (open(path, "rt") for path in paths if path.exists()),
-        (
-            module_path.open('r') if module_path.is_file() else None
-        ),
+        (module_path.open("r") if module_path.is_file() else None),
     )
 
     if found_file is None:
@@ -90,15 +94,21 @@ def _apply_field_macros(
         str: Field with references formatted by template
     """
 
-    format_macro = context.get(
+    format_card_macro = context.get(
         "card_ref", lambda component: f"[[ {component.card.index} ]]"
     )
+    code_block_macro = context.get("code_block", lambda component: f"```{component}```")
+    code_quote_macro = context.get("code_quote", lambda component: f"`{component}`")
     cards = context["cards"]
 
     response = ""
     for component in field.components(cards):
         if isinstance(component, CardComponent):
-            response += format_macro(component=component)
+            response += format_card_macro(component=component)
+        elif isinstance(component, CodeBlockComponent):
+            response += code_block_macro(component=component)
+        elif isinstance(component, CodeQuoteComponent):
+            response += code_quote_macro(component=component)
         else:
             assert isinstance(component, StringComponent)
             response += component.value
@@ -139,6 +149,9 @@ class TemplateFields:
 
     meta: dict[str, FieldMetadata]
     """Metadata from the fields of original source md."""
+
+
+import pprint
 
 
 def _template_fields(

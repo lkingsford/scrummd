@@ -4,12 +4,16 @@
     {%- set RESET = "\x1b[0m" -%}
     {%- set BOLD = "\x1b[1m" -%}
     {%- set MISSING = "\x1b[31;1m" -%}
+    {%- set DIM = "\x1b[38;5;237m" -%} {# 256 color term - most should be good, the rest will ignore #}
+    {%- set BRIGHT = "\x1b[1m" -%}
 {%- else -%}
     {%- set HEADER = "" -%}
     {%- set TITLE = "" -%}
     {%- set RESET = "" -%}
     {%- set BOLD = "" -%}
     {%- set RED = "" -%}
+    {%- set DIM = "" -%}
+    {%- set BRIGHT = "" -%}
 {%- endif -%}
 {%- macro card_ref(component) -%}
     {%- if component.card is not none -%}
@@ -18,8 +22,14 @@
         {{ MISSING }}[[{{ component.card_index }} - MISSING]]{{ RESET }}
     {%- endif -%}
 {%- endmacro -%}
+{%- macro code_block(component) -%}
+{{ DIM }}```{{ RESET }}{{ BRIGHT }}{{component.value}}{{ RESET }}{{ DIM }}```{{ RESET }}
+{%- endmacro -%}
+{%- macro code_quote(component) -%}
+{{ DIM }}`{{ RESET }}{{ BRIGHT }}{{component.value}}{{ RESET }}{{ DIM }}`{{ RESET }}
+{%- endmacro -%}
 ---
-{{ TITLE }}{{ card.index }}: {{ card.summary | apply_field_macros() }}{{ RESET }}
+{{ TITLE }}{{ card.index }}: {{ card.summary }}{{ RESET }}
 ---
 {% for key, value in card.udf.items() -%}
     {% if value is none -%}
@@ -29,7 +39,7 @@
 
 {{ value | apply_field_macros() }}
         {%- else %}
-{{ HEADER }}{{ key }}{{ RESET }}: {{ value }}
+{{ HEADER }}{{ key }}{{ RESET }}: {{ value | apply_field_macros() }}
         {%- endif -%}
     {%- elif value is number -%}
 {{ HEADER }}{{ key }}{{ RESET }}: {{ "%.2f"|format(value) }}
