@@ -33,9 +33,10 @@
         {%- endif -%}
     {%- elif value is number -%}
 {{ HEADER }}{{ key }}{{ RESET }}: {{ "%.2f"|format(value) }}
-    {%- elif value is iterable -%}
+    {%- elif value is iterable %}
+{{ HEADER }}# {{ key }}{{ RESET }}
         {% for item in value %}
-- {{ item }}
+  - {{ item -}}
         {% endfor %}
     {% endif %}
 {% endfor %}
