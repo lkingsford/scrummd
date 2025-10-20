@@ -86,7 +86,7 @@ class StringComponent(FieldComponent):
 _extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field for a collection, ignoring [[!]] cards"""
 
-_extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
+_split_field_str_components_re = re.compile(r"(?P<card>{\[\[[!]*([^\]\n]*)\]\])|(?P<code>```(.*?)```)")
 """Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
 _extract_header_level_re = re.compile(r"^#*")
@@ -94,7 +94,6 @@ _extract_header_level_re = re.compile(r"^#*")
 
 _extract_octothorpless_header_re = re.compile("^#*(.*)")
 """Regex to get the bits without #"""
-
 
 class FieldStr(str):
     """A str with the extra parsed information from the str"""
@@ -118,13 +117,19 @@ class FieldStr(str):
 
         self._components = []
         cursor = 0
-        for match in _extract_card_component_re.finditer(self):
+        for match in _split_field_str_components_re.finditer(self):
+            component_type = match.lastgroup
             if match.start() != cursor:
                 self._components.append(StringComponent(self[cursor : match.start()]))
+            if component_type == "card":
+                self._components.append(
+                    CardComponent(match.group(1), collection.get(match.group(1)))
+                )
+            else: # component_type == "code"
+                self._components.append(
+                    StringComponent(match.group(1))
+                )
 
-            self._components.append(
-                CardComponent(match.group(1), collection.get(match.group(1)))
-            )
             cursor = match.end()
         if cursor != len(self):
             self._components.append(StringComponent(self[cursor:]))

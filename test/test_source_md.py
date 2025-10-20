@@ -281,6 +281,15 @@ def test_ignore_code_block(data_config, md2_fo):
     # This wouldn't be there if it stopped adding after the block
     assert "something else" in results["description"]
 
+def test_components_ignore_code_block(data_config, md2_fo, test_collection):
+    """
+    Test that the component isolation inside the ``` blocks are ignored, and just form part of
+    the FieldStr.
+    """
+    results = source_md.extract_fields(data_config, md2_fo.read())  
+    # This would be in a card block, not a string block, if it isn't ignored.
+    assert "c1" in results["description"].components(test_collection)[0].value
+
 
 @pytest.mark.parametrize(
     ["input", "expected"],
