@@ -86,7 +86,7 @@ class StringComponent(FieldComponent):
 _extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field for a collection, ignoring [[!]] cards"""
 
-_split_field_str_components_re = re.compile(r"(?P<card>{\[\[[!]*([^\]\n]*)\]\])|(?P<code>```(.*?)```)")
+_split_field_str_components_re = re.compile(r"\[\[!*(?P<card>[^\]\n]*)\]\]|```(?P<code>.*?)```")
 """Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
 _extract_header_level_re = re.compile(r"^#*")
