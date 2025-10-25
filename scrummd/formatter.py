@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Optional, Any
 from importlib import resources
 import jinja2
+import logging
 
 from scrummd.source_md import (
     FieldMetadata,
@@ -27,9 +28,12 @@ env = jinja2.Environment()
 
 _compiled_templates: dict[str, jinja2.Template] = {}
 
+LOGGER = logging.getLogger(__name__)
+
 
 DEFAULT_MD_TEMPLATE = "default_md.j2"
 """The default MD template"""
+
 
 def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.Template:
     """Load the template (using path rules) from the filename.
@@ -63,9 +67,7 @@ def load_template(filename: str, config: scrummd.config.ScrumConfig) -> jinja2.T
     module_path = resources.files("scrummd") / "templates" / filename
     found_file = next(
         (open(path, "rt") for path in paths if path.exists()),
-        (
-            module_path.open('r') if module_path.is_file() else None
-        ),
+        (module_path.open("r") if module_path.is_file() else None),
     )
 
     if found_file is None:
@@ -139,6 +141,9 @@ class TemplateFields:
 
     meta: dict[str, FieldMetadata]
     """Metadata from the fields of original source md."""
+
+
+import pprint
 
 
 def _template_fields(

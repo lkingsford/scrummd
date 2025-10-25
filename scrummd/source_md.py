@@ -78,15 +78,35 @@ class CardComponent(FieldComponent):
 
 @dataclass
 class StringComponent(FieldComponent):
-    """A component of the field that is just a string"""
+    """A component of the field that is just a string."""
 
     value: str
 
 
+@dataclass
+class CodeBlockComponent(FieldComponent):
+    """A component that is a block of pre-formatted code."""
+
+    value: str
+
+
+@dataclass
+class CodeQuoteComponent(FieldComponent):
+    """A component that is a small piece of pre-formatted code as part of another line."""
+
+    value: str
+
+
+_extract_code_block_re = re.compile(r"```(.*)```", re.DOTALL)
+"""Regex to capture between ```s"""
+
+_extract_code_quote_re = re.compile(r"`([^`\n].+)`")
+"""Regex to capture between `s"""
+
 _extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field for a collection, ignoring [[!]] cards"""
 
-_split_field_str_components_re = re.compile(r"\[\[!*(?P<card>[^\]\n]*)\]\]|```(?P<code>.*?)```")
+_extract_card_component_re = re.compile(r"\[\[[!]*([^\]\n]*)\]\]")
 """Regex expression used to extract the [[cardindexes]] out of a field to store in the field, including [[!]] cards"""
 
 _extract_header_level_re = re.compile(r"^#*")
@@ -94,6 +114,7 @@ _extract_header_level_re = re.compile(r"^#*")
 
 _extract_octothorpless_header_re = re.compile("^#*(.*)")
 """Regex to get the bits without #"""
+
 
 class FieldStr(str):
     """A str with the extra parsed information from the str"""
@@ -115,26 +136,111 @@ class FieldStr(str):
         if self._components:
             return self._components
 
-        self._components = []
-        cursor = 0
-        for match in _split_field_str_components_re.finditer(self):
-            component_type = match.lastgroup
-            if match.start() != cursor:
-                self._components.append(StringComponent(self[cursor : match.start()]))
-            if component_type == "card":
-                self._components.append(
-                    CardComponent(match.group(1), collection.get(match.group(1)))
-                )
-            else: # component_type == "code"
-                self._components.append(
-                    StringComponent(match.group(1))
-                )
+        # Doing multiple passes here:
+        #  - Extract the ``` code blocks
+        #  - Extract the ` code quotes
+        #  - Extract the cards
+        # Doing multiple passes, because regex isn't great at ignoring things between delimiters
+        # (even if it's possible) and the re strings were getting unweildy (and undebuggable).
 
+        self._components = []
+
+        block_intermediate = self._extract_code_blocks()
+        quotes_intermediate = [
+            output_component
+            for input_component in block_intermediate
+            for output_component in (FieldStr._extract_code_quotes(input_component) if isinstance(input_component, StringComponent) else [input_component])
+        ]
+        return [
+            output_component
+            for input_component in quotes_intermediate
+            for output_component in (FieldStr._extract_cards(input_component, collection) if isinstance(input_component, StringComponent) else [input_component])
+        ]
+
+    def _extract_code_blocks(self) -> list[StringComponent | CodeBlockComponent]:
+        """
+        Break the ``` blocks into their own components
+
+        Returns:
+            list[StringComponent | CodeBlockComponent]: An intermediate breakdown of the seperating
+                the CodeBlockComponents from the partially processed StringComponents.
+        """
+        # I think there might be a better way without literally incrementing a cursor here - but
+        # it is at least clear.
+        cursor = 0
+        components: list[StringComponent | CodeBlockComponent] = []
+        test_all = _extract_code_block_re.findall(self)
+        for match in _extract_code_block_re.finditer(self):
+            if match.start() != cursor:
+                components.append(StringComponent(self[cursor : match.start()]))
+            components.append(CodeBlockComponent(match.group(1)))
             cursor = match.end()
         if cursor != len(self):
-            self._components.append(StringComponent(self[cursor:]))
+            components.append(StringComponent(self[cursor:]))
 
-        return self._components
+        return components
+
+    @staticmethod
+    def _extract_code_quotes(
+        component: StringComponent,
+    ) -> list[StringComponent | CodeQuoteComponent]:
+        """
+        Break the ` quotes out of the strings.
+
+        Args:
+            component (StringComponent): Component to break down further
+
+        Returns:
+            list[StringComponent | CodeQuoteComponent]: An intermediate breakdown of the seperating
+                the CodeQuoteComponents from the partially processed StringComponents.
+        """
+
+        # Considering whether this should be refactored to reduce repetition with above.
+        cursor = 0
+        components: list[StringComponent | CodeQuoteComponent] = []
+        for match in _extract_code_quote_re.finditer(component.value):
+            if match.start() != cursor:
+                components.append(
+                    StringComponent(component.value[cursor : match.start()])
+                )
+            components.append(CodeQuoteComponent(match.group(1)))
+            cursor = match.end()
+        if cursor != len(component.value):
+            components.append(StringComponent(component.value[cursor:]))
+
+        return components
+
+    @staticmethod
+    def _extract_cards(
+        component: StringComponent, collection: "Collection"
+    ) -> list[StringComponent | CardComponent]:
+        """
+        Break the cards out of the strings.
+
+        Args:
+            component (StringComponent): Component to break down further.
+            collection (Collection): Collection of cards to pass to new CardComponents.
+
+        Returns:
+            list[StringComponent | CardComponent]: An intermediate break down of the component
+                separating the CardComponents from the StringComponents.
+        """
+
+        cursor = 0
+        components: list[StringComponent | CardComponent] = []
+        for match in _extract_card_component_re.finditer(component.value):
+            if match.start() != cursor:
+                components.append(
+                    StringComponent(component.value[cursor : match.start()])
+                )
+            components.append(
+                CardComponent(match.group(1), collection.get(match.group(1)))
+            )
+            cursor = match.end()
+        if cursor != len(component.value):
+            components.append(StringComponent(component.value[cursor:]))
+
+        return components
 
 
 class FieldNumber(float, FieldComponent):
@@ -318,8 +424,9 @@ class ParsedMd:
         """
         return self._meta[key]
 
-
-    def set_fields(self, config: ScrumConfig, fields_to_set: list[tuple[str, str]]) -> "ParsedMd":
+    def set_fields(
+        self, config: ScrumConfig, fields_to_set: list[tuple[str, str]]
+    ) -> "ParsedMd":
         """
         Sets all fields in fields_to_set to their respective values (creating them if they don't
             exist. Returns a new ParsedMd with the new value.
@@ -567,7 +674,16 @@ def extract_collection(field_value: Field) -> list[str]:
 
     results = []
     for value in field_list:
-        results.extend(_extract_collection_re.findall(str(value)))
+        for match in _extract_collection_re.finditer(str(value)):
+            if match.lastgroup == "card":
+                results.append(match.group(1))
+        # results.extend(
+        #    [
+        #        matches.group(1)
+        #        for matches in _extract_collection_re.finditer(str(value))
+        #        if matches.lastgroup == "card"
+        #    ]
+        # )
     return results
 
 
