@@ -143,18 +143,37 @@ class FieldStr(str):
         # Doing multiple passes, because regex isn't great at ignoring things between delimiters
         # (even if it's possible) and the re strings were getting unweildy (and undebuggable).
 
-        self._components = []
-
-        block_intermediate = self._extract_code_blocks()
-        quotes_intermediate = [
+        self._components = [
             output_component
-            for input_component in block_intermediate
-            for output_component in (FieldStr._extract_code_quotes(input_component) if isinstance(input_component, StringComponent) else [input_component])
+            for input_component in self._extract_code_components()
+            for output_component in (
+                FieldStr._extract_cards(input_component, collection)
+                if isinstance(input_component, StringComponent)
+                else [input_component]
+            )
         ]
+        return self._components
+
+    def _extract_code_components(
+        self,
+    ) -> list[StringComponent | CodeBlockComponent | CodeQuoteComponent]:
+        """
+        Break the ``` blocks and ` quotes into their own components
+
+        Returns:
+            list[StringComponent | CodeBlockComponent | CodeQuoteComponent]: An
+                intermediate breakdown of the seperating the Code Components from the
+                partially processed StringComponents.
+        """
+        block_intermediate = self._extract_code_blocks()
         return [
             output_component
-            for input_component in quotes_intermediate
-            for output_component in (FieldStr._extract_cards(input_component, collection) if isinstance(input_component, StringComponent) else [input_component])
+            for input_component in block_intermediate
+            for output_component in (
+                FieldStr._extract_code_quotes(input_component)
+                if isinstance(input_component, StringComponent)
+                else [input_component]
+            )
         ]
 
     def _extract_code_blocks(self) -> list[StringComponent | CodeBlockComponent]:
@@ -169,7 +188,6 @@ class FieldStr(str):
         # it is at least clear.
         cursor = 0
         components: list[StringComponent | CodeBlockComponent] = []
-        test_all = _extract_code_block_re.findall(self)
         for match in _extract_code_block_re.finditer(self):
             if match.start() != cursor:
                 components.append(StringComponent(self[cursor : match.start()]))
@@ -241,6 +259,30 @@ class FieldStr(str):
             components.append(StringComponent(component.value[cursor:]))
 
         return components
+
+    def extract_collection(self) -> list[str]:
+        """
+        Extract all of the card ids from a field (str or list of strings).
+
+        Cards marked with `!` (like `[[!c1]]`) are no included.
+
+        Returns:
+            list[str] A list of all card indexes.
+        """
+        components = self._extract_code_components()
+        non_code_components: list[StringComponent] = [
+            component
+            for component in components
+            if isinstance(component, StringComponent)
+            # I know this says 'non_code' not 'field_str' - but at this intermediate step, they're
+            # the same thing.
+        ]
+        cards = [
+            card
+            for component in non_code_components
+            for card in _extract_collection_re.findall(component.value)
+        ]
+        return cards
 
 
 class FieldNumber(float, FieldComponent):
@@ -666,25 +708,15 @@ def extract_collection(field_value: Field) -> list[str]:
     Returns:
         list[Index]: A list of all card indexes
     """
-    field_list: list[Field] = []
+    field_list: list[FieldStr] = []
     if isinstance(field_value, list):
-        field_list.extend(field_value)
+        field_list = field_value
+    elif isinstance(field_value, FieldStr):
+        field_list = [field_value]
     else:
-        field_list.append(field_value)
+        return []
 
-    results = []
-    for value in field_list:
-        for match in _extract_collection_re.finditer(str(value)):
-            if match.lastgroup == "card":
-                results.append(match.group(1))
-        # results.extend(
-        #    [
-        #        matches.group(1)
-        #        for matches in _extract_collection_re.finditer(str(value))
-        #        if matches.lastgroup == "card"
-        #    ]
-        # )
-    return results
+    return[card for field in field_list for card in field.extract_collection()]
 
 
 def typed_field(field: str) -> Field:
