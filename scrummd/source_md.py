@@ -97,10 +97,10 @@ class CodeQuoteComponent(FieldComponent):
     value: str
 
 
-_extract_code_block_re = re.compile(r"```(.*)```", re.DOTALL)
+_extract_code_block_re = re.compile(r"```(.*?)```", re.DOTALL)
 """Regex to capture between ```s"""
 
-_extract_code_quote_re = re.compile(r"`([^`\n].+)`")
+_extract_code_quote_re = re.compile(r"`([^`\n].+?)`")
 """Regex to capture between `s"""
 
 _extract_collection_re = re.compile(r"\[\[([^!][^\]\n]*)\]\]")

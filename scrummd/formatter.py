@@ -9,6 +9,8 @@ import jinja2
 import logging
 
 from scrummd.source_md import (
+    CodeBlockComponent,
+    CodeQuoteComponent,
     FieldMetadata,
     FieldStr,
     CardComponent,
@@ -92,15 +94,21 @@ def _apply_field_macros(
         str: Field with references formatted by template
     """
 
-    format_macro = context.get(
+    format_card_macro = context.get(
         "card_ref", lambda component: f"[[ {component.card.index} ]]"
     )
+    code_block_macro = context.get("code_block", lambda component: f"```{component}```")
+    code_quote_macro = context.get("code_quote", lambda component: f"`{component}`")
     cards = context["cards"]
 
     response = ""
     for component in field.components(cards):
         if isinstance(component, CardComponent):
-            response += format_macro(component=component)
+            response += format_card_macro(component=component)
+        elif isinstance(component, CodeBlockComponent):
+            response += code_block_macro(component=component)
+        elif isinstance(component, CodeQuoteComponent):
+            response += code_quote_macro(component=component)
         else:
             assert isinstance(component, StringComponent)
             response += component.value
