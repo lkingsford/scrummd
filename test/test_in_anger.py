@@ -26,7 +26,7 @@ def test_scard(scrumcli_config):
     for index, _card in backlog.items():
         output_cards(
             scrumcli_config,
-            load_template("default_scard.j2", scrumcli_config),
+            "default_scard.j2",
             backlog,
             index,
         )
